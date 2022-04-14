@@ -1,6 +1,6 @@
 use byte::{BytesExt, LE};
 use dash_spv_primitives::crypto::byte_util::BytesDecodable;
-use dash_spv_primitives::impl_bytes_decodable;
+use dash_spv_primitives::{impl_bytes_decodable, impl_bytes_decodable_lt};
 
 pub mod llmq_entry;
 pub mod masternode_list;
@@ -11,3 +11,4 @@ pub use self::masternode_entry::MasternodeEntry;
 pub use self::masternode_list::MasternodeList;
 
 impl_bytes_decodable!(MasternodeEntry);
+impl_bytes_decodable_lt!(LLMQEntry);
