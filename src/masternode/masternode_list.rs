@@ -1,7 +1,8 @@
 use std::cmp::min;
 use std::collections::{BTreeMap, HashMap};
 use dash_spv_primitives::consensus::Encodable;
-use dash_spv_primitives::crypto::byte_util::{merkle_root_from_hashes, Reversable, UInt256, Zeroable};
+use dash_spv_primitives::crypto::byte_util::{merkle_root_from_hashes, Reversable, Zeroable};
+use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256};
 use crate::common::llmq_type::LLMQType;
 use crate::masternode::llmq_entry::LLMQEntry;

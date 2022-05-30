@@ -1,4 +1,4 @@
-use dash_spv_primitives::crypto::byte_util::UInt256;
+use dash_spv_primitives::crypto::UInt256;
 
 // #[repr(C)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]

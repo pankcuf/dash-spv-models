@@ -2,7 +2,7 @@ use byte::{BytesExt, LE, TryRead};
 use byte::ctx::Endian;
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::consensus::encode::VarInt;
-use dash_spv_primitives::crypto::byte_util::UInt256;
+use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256d};
 use crate::tx::transaction::TransactionType::Coinbase;
 use crate::tx::transaction::Transaction;

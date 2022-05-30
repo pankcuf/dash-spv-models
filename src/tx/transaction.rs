@@ -2,9 +2,8 @@ use byte::ctx::Endian;
 use byte::{BytesExt, LE, TryRead};
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::consensus::encode::{consensus_encode_with_size, VarInt};
-use dash_spv_primitives::crypto::byte_util::{UInt256, VarBytes};
+use dash_spv_primitives::crypto::{UInt256, VarBytes};
 use dash_spv_primitives::hashes::{Hash, sha256d};
-use crate::tx::transaction::TransactionType::Classic;
 
 // block height indicating transaction is unconfirmed
 pub const TX_UNCONFIRMED: i32 = i32::MAX;
@@ -120,15 +119,12 @@ pub trait ITransaction {
 
 #[derive(Debug)]
 pub struct Transaction<'a> {
-
     pub inputs: Vec<TransactionInput<'a>>,
     pub outputs: Vec<TransactionOutput<'a>>,
-
     pub lock_time: u32,
     pub version: u16,
     pub tx_hash: Option<UInt256>,
     pub tx_type: TransactionType,
-
     pub payload_offset: usize,
     pub block_height: u32,
 }
@@ -224,7 +220,7 @@ impl<'a> TryRead<'a, Endian> for Transaction<'a> {
             payload_offset: *offset,
             block_height: TX_UNCONFIRMED as u32
         };
-        tx.tx_hash = if tx_type == Classic {
+        tx.tx_hash = if tx_type == TransactionType::Classic {
             Some(UInt256(sha256d::Hash::hash(&tx.to_data()).into_inner()))
         } else {
             None

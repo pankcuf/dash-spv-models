@@ -1,5 +1,6 @@
 use dash_spv_primitives::consensus::Encodable;
-use dash_spv_primitives::crypto::byte_util::{BytesDecodable, UInt256};
+use dash_spv_primitives::crypto::byte_util::BytesDecodable;
+use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256d};
 
 #[inline]
