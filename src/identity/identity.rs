@@ -110,7 +110,7 @@ pub struct Identity<'a> {
 
     /// This is the localized status of the registration of the identity returned as a string.
     /// It starts off in an initial status, and ends in a confirmed status
-    pub localized_registration_status_string: &'a str;
+    pub localized_registration_status_string: &'a str,
 
     /// This is a convenience method that checks to see if registrationStatus is confirmed
     pub is_registered: bool,
