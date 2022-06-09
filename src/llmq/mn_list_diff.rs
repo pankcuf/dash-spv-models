@@ -27,7 +27,7 @@ pub struct MNListDiff<'a> {
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
 
     pub deleted_quorums: HashMap<LLMQType, Vec<UInt256>>,
-    pub added_quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry<'a>>>,
+    pub added_quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
 
     pub length: usize,
     pub block_height: u32,

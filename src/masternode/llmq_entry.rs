@@ -12,8 +12,9 @@ use crate::common::llmq_type::LLMQType;
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
 pub const LLMQ_INDEXED_VERSION: u16 = 2;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub struct LLMQEntry<'a> {
+#[derive(Clone, PartialEq, Eq)]
+// pub struct LLMQEntry<'a> {
+pub struct LLMQEntry {
     pub version: u16,
     pub llmq_hash: UInt256,
     pub index: Option<u32>,
@@ -22,9 +23,9 @@ pub struct LLMQEntry<'a> {
     pub verification_vector_hash: UInt256,
     pub all_commitment_aggregated_signature: UInt768,
     pub llmq_type: LLMQType,
-    pub signers_bitset: &'a [u8],
+    pub signers_bitset: Vec<u8>,
     pub signers_count: VarInt,
-    pub valid_members_bitset: &'a [u8],
+    pub valid_members_bitset: Vec<u8>,
     pub valid_members_count: VarInt,
     pub length: usize,
     pub entry_hash: UInt256,
@@ -32,7 +33,7 @@ pub struct LLMQEntry<'a> {
     pub saved: bool,
     pub commitment_hash: Option<UInt256>,
 }
-impl<'a> std::fmt::Debug for LLMQEntry<'a> {
+impl std::fmt::Debug for LLMQEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LLMQEntry")
             .field("llmq_hash", &self.llmq_hash)
@@ -43,7 +44,7 @@ impl<'a> std::fmt::Debug for LLMQEntry<'a> {
     }
 }
 
-impl<'a> TryRead<'a, Endian> for LLMQEntry<'a> {
+impl<'a> TryRead<'a, Endian> for LLMQEntry {
     fn try_read(bytes: &'a [u8], _ctx: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let version = bytes.read_with::<u16>(offset, LE)?;
@@ -86,8 +87,8 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry<'a> {
             signers_count: signers_count.clone(),
             llmq_type,
             valid_members_count: valid_members_count.clone(),
-            signers_bitset,
-            valid_members_bitset,
+            signers_bitset: signers_bitset.to_vec(),
+            valid_members_bitset: valid_members_bitset.to_vec(),
             length: *offset,
             entry_hash,
             verified: false,
@@ -97,7 +98,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry<'a> {
     }
 }
 
-impl<'a> LLMQEntry<'a> {
+impl LLMQEntry {
 
     pub fn generate_data(
         version: u16,
@@ -134,8 +135,8 @@ impl<'a> LLMQEntry<'a> {
     pub fn to_data(&self) -> Vec<u8> {
         LLMQEntry::generate_data(
             self.version, self.llmq_type, self.llmq_hash,
-            self.signers_count, self.signers_bitset,
-            self.valid_members_count, self.valid_members_bitset,
+            self.signers_count, &self.signers_bitset,
+            self.valid_members_count, &self.valid_members_bitset,
             self.public_key, self.verification_vector_hash,
             self.threshold_signature, self.all_commitment_aggregated_signature)
     }

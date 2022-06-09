@@ -10,16 +10,16 @@ use crate::masternode::masternode_entry::MasternodeEntry;
 use crate::tx::coinbase_transaction::CoinbaseTransaction;
 
 #[derive(Clone)]
-pub struct MasternodeList<'a> {
+pub struct MasternodeList {
     pub block_hash: UInt256,
     pub known_height: u32,
     pub masternode_merkle_root: Option<UInt256>,
     pub llmq_merkle_root: Option<UInt256>,
     pub masternodes: BTreeMap<UInt256, MasternodeEntry>,
-    pub quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry<'a>>>,
+    pub quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
 }
 
-impl<'a> std::fmt::Debug for MasternodeList<'a> {
+impl<'a> std::fmt::Debug for MasternodeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MasternodeList")
             .field("block_hash", &self.block_hash)
@@ -32,10 +32,10 @@ impl<'a> std::fmt::Debug for MasternodeList<'a> {
     }
 }
 
-impl<'a> MasternodeList<'a> {
+impl MasternodeList {
     pub fn new(
         masternodes: BTreeMap<UInt256, MasternodeEntry>,
-        quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry<'a>>>,
+        quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
         block_hash: UInt256,
         block_height: u32,
         quorums_active: bool
