@@ -8,7 +8,7 @@ use crate::identity::transient_dashpay_user::TransientDashpayUser;
 use crate::tx::{CreditFundingTransaction, UTXO};
 use crate::wallet::wallet::Wallet;
 
-pub struct Identity<'a> {
+pub struct Identity {
 
     /// This is the unique identifier representing the blockchain identity.
     /// It is derived from the credit funding transaction credit burn UTXO (as of dpp v10).
@@ -35,7 +35,7 @@ pub struct Identity<'a> {
     pub is_transient: bool,
 
     /// This references transient Dashpay user info if on a transient blockchain identity.
-    pub transient_dashpay_user: TransientDashpayUser<'a>,
+    pub transient_dashpay_user: TransientDashpayUser,
 
     /// This is the bitwise steps that the identity has already performed in registration.
     pub steps_completed: RegistrationStep,
@@ -58,27 +58,27 @@ pub struct Identity<'a> {
     /// This is the list of usernames that are associated to the identity in the domain "dash".
     /// These usernames however might not yet be registered or might be invalid.
     /// This can be used in tandem with the statusOfUsername: method
-    pub dashpay_usernames: Vec<&'a str>,
+    pub dashpay_usernames: Vec<String>,
 
     /// Related to DPNS.
     /// This is the list of usernames with their .dash domain that are associated to the identity
     /// in the domain "dash".
     /// These usernames however might not yet be registered or might be invalid.
     /// This can be used in tandem with the statusOfUsername: method
-    pub dashpay_username_full_paths: Vec<&'a str>,
+    pub dashpay_username_full_paths: Vec<String>,
 
     /// Related to DPNS.
     /// This is current and most likely username associated to the identity.
     /// It is not necessarily registered yet on L2 however so its state should be determined with
     /// the statusOfUsername: method
     /// There are situations where this is nil as it is not yet known or if no username has yet been set
-    pub current_dashpay_username: Option<&'a str>,
+    pub current_dashpay_username: Option<String>,
 
     /// Related to registering the identity.
     /// This is the address used to fund the registration of the identity.
     /// Dash sent to this address in the special credit funding transaction will be converted to
     /// L2 credits
-    pub registration_funding_address: &'a str,
+    pub registration_funding_address: String,
 
     /// The known balance in credits of the identity
     pub credit_balance: u64,
@@ -110,7 +110,7 @@ pub struct Identity<'a> {
 
     /// This is the localized status of the registration of the identity returned as a string.
     /// It starts off in an initial status, and ends in a confirmed status
-    pub localized_registration_status_string: &'a str,
+    pub localized_registration_status_string: String,
 
     /// This is a convenience method that checks to see if registrationStatus is confirmed
     pub is_registered: bool,

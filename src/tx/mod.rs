@@ -6,6 +6,7 @@ pub mod coinbase_transaction;
 pub mod transaction;
 pub mod utxo;
 pub mod credit_funding_transaction;
+pub mod direction;
 
 pub use self::transaction::Transaction;
 pub use self::transaction::TransactionInput;

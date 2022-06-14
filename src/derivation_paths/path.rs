@@ -1,17 +1,23 @@
 use std::borrow::BorrowMut;
 use std::collections::HashSet;
 use byte::BytesExt;
+use dash_spv_primitives::crypto::byte_util::ECPoint;
 use dash_spv_primitives::crypto::data_ops::{bip32, deserialize, uint256_from_long};
+use dash_spv_primitives::crypto::index_path::IndexPath;
 use dash_spv_primitives::crypto::UInt256;
 use crate::chain::chain::Chain;
 use crate::common::ChainType;
 use crate::common::ChainType::MainNet;
 use crate::derivation_paths::reference::Reference;
 use crate::{derivation_paths, keys};
+use crate::chain::chain_parameters::ChainParameters;
 use crate::derivation_paths::r#type;
-use crate::keys::ECDSAKey;
+use crate::keys::{BLSKey, ECDSAKey, IKey, Key, Type};
 use crate::wallet::account::Account;
 use crate::wallet::wallet::Wallet;
+
+pub const BIP32_HARD: usize = 0x80000000;
+pub const BIP32_HARD_LE: usize = 0x00000080;
 
 pub const FEATURE_PURPOSE: u64 = 9;
 pub const FEATURE_PURPOSE_IDENTITIES: u64 = 5;
@@ -29,37 +35,39 @@ const DERIVATION_PATH_STANDALONE_INFO_TERMINAL_INDEX: &str = "DP_SI_T_INDEX";
 const DERIVATION_PATH_STANDALONE_INFO_TERMINAL_HARDENED: &str = "DP_SI_T_HARDENED";
 const DERIVATION_PATH_STANDALONE_INFO_DEPTH: &str = "DP_SI_DEPTH";
 
-pub struct Path<'a> {
+// pub type TransactionValidityCompletionBlock = Fn(bool, bool);
+
+pub struct Path<P: ChainParameters> {
 
     pub indexes: Vec<UInt256>,
     pub hardened_indexes: Vec<bool>,
 
     /// master public key used to generate wallet addresses
-    extended_public_key: Option<dyn keys::IKey>,
+    pub(crate) extended_public_key: Option<dyn IKey<P>>,
 
     /// is this an open account
-    pub r#type: keys::Type,
+    pub r#type: Type,
 
-    pub signing_algorithm: keys::Type,
-
-    /// account for the derivation path
-    pub chain: Chain,
+    pub signing_algorithm: Type,
 
     /// account for the derivation path
-    pub account: Option<Account<'a>>, // weak
-    pub wallet: Option<Wallet<'a>>, // weak
+    pub chain: Chain<P>,
+
+    /// account for the derivation path
+    pub account: Option<Account<P>>, // weak
+    pub wallet: Option<Wallet<P>>, // weak
 
     /// this returns the derivation path's visual representation (e.g. m/44'/5'/0')
-    pub string_representation: Option<&'a str>,
+    pub string_representation: Option<String>,
 
     /// extended Public Key Identifier, which is just the short hex string of the extended public key
-    pub standalone_extended_public_key_unique_id: Option<&'a str>,
+    pub standalone_extended_public_key_unique_id: Option<String>,
 
     /// the wallet_based_extended_public_key_location_string is the key used to store the public key in the key chain
-    pub wallet_based_extended_public_key_location_string: Option<&'a str>,
+    pub wallet_based_extended_public_key_location_string: Option<String>,
 
     /// the wallet_based_extended_public_key_location_string is the key used to store the private key in the key chain, this is only available on authentication derivation paths
-    pub wallet_based_extended_private_key_location_string: Option<&'a str>,
+    pub wallet_based_extended_private_key_location_string: Option<String>,
 
     /// current derivation path balance excluding transactions known to be invalid
     pub balance: u64,
@@ -68,10 +76,10 @@ pub struct Path<'a> {
     pub sync_block_height: u32,
 
     /// all previously generated addresses
-    pub all_addresses: HashSet<&'a str>,
+    pub all_addresses: HashSet<String>,
 
     /// all previously used addresses
-    pub used_addresses: HashSet<&'a str>,
+    pub used_addresses: HashSet<String>,
 
 
     /// the reference of type of derivation path
@@ -86,7 +94,7 @@ pub struct Path<'a> {
     pub depth: u8,
 }
 
-impl<'a> Path<'a> {
+impl<P> Path<P> {
     /// UInt256IndexPath
 
     pub fn index_at_position(&self, position: usize) -> UInt256 {
@@ -127,12 +135,39 @@ impl<'a> Path<'a> {
         if self.extended_public_key.is_some() {
             return true;
         }
-        hasKeychainData(if self.wallet.is_some() &&
-            (self.indexes.len() > 0 || self.reference == Reference::Root) {
-            self.wallet_based_extended_public_key_location_string
-        } else {
-            self.standalone_extended_public_key_unique_id
-        }, nil)
+        false
+        // hasKeychainData(if self.wallet.is_some() &&
+        //     (self.indexes.len() > 0 || self.reference == Reference::Root) {
+        //     self.wallet_based_extended_public_key_location_string
+        // } else {
+        //     self.standalone_extended_public_key_unique_id
+        // }, nil)
+    }
+
+    pub fn private_key_at_index_path(&self, index_path: Option<IndexPath<usize>>, seed: Option<Vec<u8>>) -> Option<dyn IKey<P>> {
+        assert!(index_path);
+        assert!(seed);
+        match index_path {
+            Some(index_path) => {
+                if seed.is_none() {
+                    return None;
+                }
+                //if (![self length]) return nil; //there needs to be at least 1 length
+                assert!(top_key, "Top key should exist");
+                return if let Some(top_key) = Key::key_with_seed_data(seed.clone(), self.signing_algorithm.clone()) {
+                    if let Some(derivation_path_extended_key) = top_key.private_derive_to_256_bit_derivation_path(&self) {
+                        derivation_path_extended_key.private_derive_to_path(index_path)
+                    } else {
+                        assert!(false, "Top key should exist");
+                        None
+                    }
+                } else {
+                    assert!(false, "Top key should exist");
+                    None
+                }
+            },
+            _ => None
+        }
     }
 
     pub fn get_string_representation_of_index(index: UInt256, hardened: bool) {
@@ -190,13 +225,19 @@ impl<'a> Path<'a> {
     }
 
     /// extended Public Key
-    pub fn extended_public_key_data(&self) -> Option<&[u8]> {
-        self.extended_public_key?.extended_public_key_data
+    pub fn extended_public_key_data(&self) -> Option<Vec<u8>> {
+        self.extended_public_key?.get_base().extended_public_key_data
     }
 
     pub fn standalone_save_extended_public_key_to_key_chain(&self) {
 
     }
+
+    // true if the address is controlled by the wallet
+    pub fn contains_address(&self, address: Option<String>) -> bool {
+        address.is_some() && self.all_addresses.contains(address.unwrap().as_str())
+    }
+
 
     pub fn load_addresses(&self) {
 
@@ -204,6 +245,109 @@ impl<'a> Path<'a> {
     pub fn reload_addresses(&self) {
 
     }
+
+    pub fn private_keys_at_index_paths<T>(&self, index_paths: Option<Vec<IndexPath<T>>>, seed: Option<Vec<u8>>) -> Option<Vec<dyn keys::IKey>> {
+        match index_paths {
+            None => None,
+            Some(index_paths) => {
+                if seed.is_none() {
+                    return None;
+                }
+                let private_keys: Vec<dyn IKey> = Vec::with_capacity(index_paths.len());
+                if index_paths.len() == 0 {
+                    return Some(private_keys);
+                }
+                if let Some(top_key)= keys::Key::key_with_seed_data(seed, self.signing_algorithm.clone()) {
+                    let derivation_path_extended_key = top_key.private_derive_to_256_bit_derivation_path(self)
+
+                    #[cfg(debug_assertions)]
+                    {
+                        if let Some(public_key) = self.extended_public_key?.get_base().extended_public_key_data {
+                            let public_key = self.extended_public_key
+                        }
+                    }
+                }
+            }
+        }
+
+        if index_paths.is_none() || seed.is_none() {
+            return None;
+        }
+        if index_paths.
+    }
+    - (NSArray *)privateKeysAtIndexPaths:(NSArray *)indexPaths fromSeed:(NSData *)seed {
+    if (!seed || !indexPaths) return nil;
+    if (indexPaths.count == 0) return @[];
+    NSMutableArray *privateKeys = [NSMutableArray arrayWithCapacity:indexPaths.count];
+    DSKey *topKey = [DSKey keyWithSeedData:seed forKeyType:self.signingAlgorithm];
+    DSKey *derivationPathExtendedKey = [topKey privateDeriveTo256BitDerivationPath:self];
+
+    #if DEBUG
+    if (_extendedPublicKey) {
+    NSData *publicKey = _extendedPublicKey.extendedPublicKeyData;
+    NSAssert([publicKey isEqualToData:derivationPathExtendedKey.extendedPublicKeyData], @"The derivation doesn't match the public key");
+    }
+    #endif
+
+    for (NSIndexPath *indexPath in indexPaths) {
+    DSKey *privateKey = [derivationPathExtendedKey privateDeriveToPath:indexPath];
+    [privateKeys addObject:privateKey];
+    }
+
+    return privateKeys;
+    }
+
+    pub fn public_key_data_at_index_path(&self, index_path: IndexPath<usize>) -> Option<Vec<u8>> {
+        self.signing_algorithm.public_key_data_at_index_path(self.extended_public_key_data(), index_path)
+    }
+
+
+    // gets an address at an index path
+    pub fn address_at_index_path(&self, index_path: IndexPath<usize>) -> Option<String> {
+        let pub_key = self.public_key_data_at_index_path(index_path);
+        Key::address_with_public_key_data(pub_key, self.chain.chain_type.public_key_address())
+    }
+
+    // true if the address was previously used as an input or output in any wallet transaction
+    pub fn address_is_used(&self, address: Option<String>) -> bool {
+        address.is_some() && self.used_addresses.contains(&address.unwrap())
+    }
+
+
+    pub fn address_is_used_at_index_path(&self, index_path: IndexPath<usize>) -> bool {
+        self.address_is_used(self.address_at_index_path(index_path))
+    }
+
+    pub fn serialized_private_keys_at_index_paths(&self, index_paths: Option<Vec<IndexPath<u32>>>, seed: Option<Vec<u8>>) -> Option<Vec<dyn IKey<P>>> {
+        match (index_paths, seed) {
+            (Some(index_paths), Some(seed)) => {
+                let mut serialized_private_keys: Vec<dyn IKey<P>> = Vec::with_capacity(index_paths.len());
+                if index_paths.is_empty() {
+                    return Some(serialized_private_keys);
+                }
+                if let Some(top_key)= keys::Key::key_with_seed_data(Some(seed), self.signing_algorithm.clone()) {
+                    if let Some(derivation_path_extended_key) = top_key.private_derive_to_256_bit_derivation_path(&self) {
+                        index_paths.iter().map(|&index_path| {
+                            if let Some(private_key) = derivation_path_extended_key.private_derive_to_path(index_path) {
+                                let serialized_private_key = private_key.serialized_private_key_for_chain(self.chain);
+                                assert!(serialized_private_key, "The serialized private key should exist");
+                                serialized_private_keys.push(serialized_private_key.unwrap());
+                            }
+                        })
+                    }
+                }
+                serialized_private_keys
+            },
+            _ => None
+
+        }
+    }
+
+    pub fn index_path_for_known_address(&self, address: String) -> Option<IndexPath<usize>> {
+        assert!(false, "This must be implemented in concrete derivation path {}", address);
+        None
+    }
+
 
     pub fn wallet_based_extended_public_key_location_string_for_unique_id(unique_id: &str) -> String {
         format!("{}_{}", DERIVATION_PATH_EXTENDED_PUBLIC_KEY_WALLET_BASED_LOCATION, unique_id)
@@ -228,7 +372,7 @@ impl<'a> Path<'a> {
         format!("{}{}{}", path, algo, s)
     }
 
-    pub fn master_blockchain_identity_contacts_derivation_path_for_account_number(account_number: u64, chain: Chain) -> Path {
+    pub fn master_blockchain_identity_contacts_derivation_path_for_account_number(account_number: u64, chain: Chain<P>) -> Self<P> {
         /// TODO: full uint256 derivation
         derivationPathWithIndexes(
             vec![
@@ -249,16 +393,16 @@ impl<'a> Path<'a> {
         r#type: r#type::Type,
         signing_algorithm: keys::Type,
         reference: Reference,
-        chain: Chain
-    ) -> Path<'a> {
+        chain: Chain<P>
+    ) -> Self<P> {
         init_with_indexes(indexes, hardened_indexes, r#type, signing_algorithm, reference, chain)
     }
 
     pub fn derivation_path_with_serialized_extended_private_key(
         serialized_extended_private_key: &str,
         funds_type: derivation_paths::Type,
-        chain: Chain,
-    ) -> Path {
+        chain: Chain<P>,
+    ) -> Self<P> {
         let extended_private_key = deserialized_extended_private_key(
             serialized_extended_private_key,
             chain.clone()
@@ -277,8 +421,8 @@ impl<'a> Path<'a> {
 
     pub fn derivation_path_with_serialized_extended_public_key(
         serialized_extended_public_key: &str,
-        chain: Chain,
-    ) -> Path {
+        chain: Chain<P>,
+    ) -> Self<P> {
         let mut depth: u8 = 0;
         let mut terminal_hardened = false;
         let mut terminal_index = UInt256::MIN;
@@ -303,7 +447,7 @@ impl<'a> Path<'a> {
         path
     }
 
-    pub fn initWithExtendedPublicKeyIdentifier(identifier: &str, chain: Chain) -> Path {
+    pub fn init_with_extended_public_key_identifier(identifier: &str, chain: Chain<P>) -> Self<P> {
 
         NSError *error = nil;
         NSDictionary *infoDictionary = getKeychainDict([DSDerivationPath standaloneInfoDictionaryLocationStringForUniqueID:extendedPublicKeyIdentifier], @[[NSString class], [NSNumber class]], &error);
@@ -331,12 +475,13 @@ impl<'a> Path<'a> {
         r#type: derivation_paths::Type,
         signing_algorithm: keys::Type,
         reference: Reference,
-        chain: Chain
-    ) -> Path {
+        chain: Chain<P>
+    ) -> Self<P> {
         // chainContext
         Self {
             indexes,
             hardened_indexes,
+            extended_public_key: None,
             r#type,
             signing_algorithm,
             chain,
@@ -353,8 +498,42 @@ impl<'a> Path<'a> {
             reference,
             derivation_path_is_known: true,
             addresses_loaded: false,
+            depth: 0
         }
     }
+
+    // MARK: - Key Generation
+
+    pub fn generate_extended_public_key_from_seed(&self, seed: Option<Vec<u8>>, wallet_unique_id: Option<String>) -> Option<dyn IKey<P>> {
+        //return [self generate_extended_public_key_from_seed:seed storeUnderWalletUniqueId:walletUniqueId storePrivateKey:NO];
+        self.generate_extended_public_key_from_seed(seed, wallet_unique_id, false)
+    }
+
+    pub fn generate_extended_public_key_from_seed_and_store_private_key(&mut self, seed: Option<Vec<u8>>, wallet_unique_id: Option<String>, store_private_key: bool) -> Option<dyn IKey<P>> {
+        if seed.is_none() || (self.indexes.len() == 0 && self.reference != Reference::Root) { // there needs to be at least 1 length
+            return None;
+        }
+        let seed_key = Key::key_with_seed_data(seed, self.signing_algorithm);
+        if seed_key.is_none() {
+            return None;
+        }
+        let ext_pub_key = seed_key.unwrap().private_derive_to_256_bit_derivation_path(*self);
+        self.extended_public_key = ext_pub_key;
+        if self.extended_public_key.is_none() {
+            assert!(false, "extendedPublicKey should be set");
+            return None
+        }
+
+        if let Some(wallet_id) = wallet_unique_id {
+            //setKeychainData(self.extendedPublicKey.extendedPublicKeyData, [self walletBasedExtendedPublicKeyLocationStringForWalletUniqueID:walletUniqueId], NO);
+            // if store_private_key {
+            //     setKeychainData(_extendedPublicKey.extendedPrivateKeyData, [self walletBasedExtendedPrivateKeyLocationStringForWalletUniqueID:walletUniqueId], YES);
+            // }
+        }
+        self.extended_public_key.unwrap().forget_private_key();
+        self.extended_public_key
+    }
+
 
     pub fn deserialized_extended_private_key(extended_private_key_string: &str, chain: Chain) -> Option<Vec<u8>> {
 
@@ -410,6 +589,9 @@ pub fn deserialized_extended_public_key<'a>(
     [masterPublicKey appendData:pubkey];
     return [masterPublicKey copy];
 }
+
+
+
 
 }
 

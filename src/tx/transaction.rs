@@ -5,10 +5,32 @@ use dash_spv_primitives::consensus::encode::{consensus_encode_with_size, VarInt}
 use dash_spv_primitives::crypto::{UInt256, VarBytes};
 use dash_spv_primitives::hashes::{Hash, sha256d};
 
+// standard tx fee per b of tx size
+pub const TX_FEE_PER_B: u64 = 1;
+// standard ix fee per input
+pub const TX_FEE_PER_INPUT: u64 = 10000;
+
+// estimated size for a typical transaction output
+pub const TX_OUTPUT_SIZE: u32 = 34;
+// estimated size for a typical compact pubkey transaction input
+pub const TX_INPUT_SIZE: u32 = 148;
+// no txout can be below this amount
+pub const TX_MIN_OUTPUT_AMOUNT: u64 = (TX_FEE_PER_B * 3 * (TX_OUTPUT_SIZE + TX_INPUT_SIZE));
+// no tx can be larger than this size in bytes
+pub const TX_MAX_SIZE: u64 = 100000;
 // block height indicating transaction is unconfirmed
 pub const TX_UNCONFIRMED: i32 = i32::MAX;
+// a lockTime below this value is a block height, otherwise a timestamp
+pub const TX_MAX_LOCK_HEIGHT: u32 = 500000000;
 
-pub static SIGHASH_ALL: u32 = 1;
+pub const TX_VERSION: u32 = 0x00000001;
+pub const SPECIAL_TX_VERSION: u32 = 0x00000003;
+pub const TX_LOCKTIME: u32 = 0x00000000;
+pub const TXIN_SEQUENCE: u32 = u32::MAX;
+pub const SIGHASH_ALL: u32 = 1;
+
+pub const MAX_ECDSA_SIGNATURE_SIZE: u32 = 75;
+
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -61,21 +83,21 @@ impl TransactionType {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct TransactionInput<'a> {
+pub struct TransactionInput {
     pub input_hash: UInt256,
     pub index: u32,
-    pub script: Option<&'a [u8]>,
-    pub signature: Option<&'a [u8]>,
+    pub script: Option<Vec<u8>>,
+    pub signature: Option<Vec<u8>>,
     pub sequence: u32,
 }
 
-impl<'a> TryRead<'a, Endian> for TransactionInput<'a> {
+impl<'a> TryRead<'a, Endian> for TransactionInput {
     fn try_read(bytes: &'a [u8], _endian: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let input_hash = bytes.read_with::<UInt256>(offset, LE)?;
         let index = bytes.read_with::<u32>(offset, LE)?;
         let signature = match bytes.read_with::<VarBytes>(offset, LE) {
-            Ok(data) => Some(data.1),
+            Ok(data) => Some(data.1.to_vec()),
             Err(_err) => None
         };
         let sequence = bytes.read_with::<u32>(offset, LE)?;
@@ -91,18 +113,18 @@ impl<'a> TryRead<'a, Endian> for TransactionInput<'a> {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct TransactionOutput<'a> {
+pub struct TransactionOutput {
     pub amount: u64,
-    pub script: Option<&'a [u8]>,
-    pub address: Option<&'a [u8]>,
+    pub script: Option<Vec<u8>>,
+    pub address: Option<Vec<u8>>,
 }
 
-impl<'a> TryRead<'a, Endian> for TransactionOutput<'a> {
+impl<'a> TryRead<'a, Endian> for TransactionOutput {
     fn try_read(bytes: &'a [u8], _endian: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let amount = bytes.read_with::<u64>(offset, LE)?;
         let script = match bytes.read_with::<VarBytes>(offset, LE) {
-            Ok(data) => Some(data.1),
+            Ok(data) => Some(data.1.to_vec()),
             Err(_err) => None
         };
         let output = TransactionOutput { amount, script, address: None };
@@ -115,12 +137,13 @@ pub trait ITransaction {
     fn payload_data(&self) -> Vec<u8>;
     fn payload_data_for(&self) -> Vec<u8>;
     fn transaction_type(&self) -> TransactionType;
+    fn get_input_addresses(&self) -> Vec<String>;
 }
 
 #[derive(Debug)]
-pub struct Transaction<'a> {
-    pub inputs: Vec<TransactionInput<'a>>,
-    pub outputs: Vec<TransactionOutput<'a>>,
+pub struct Transaction {
+    pub inputs: Vec<TransactionInput>,
+    pub outputs: Vec<TransactionOutput>,
     pub lock_time: u32,
     pub version: u16,
     pub tx_hash: Option<UInt256>,
@@ -129,7 +152,7 @@ pub struct Transaction<'a> {
     pub block_height: u32,
 }
 
-impl<'a> Transaction<'a> {
+impl Transaction {
 
     pub fn to_data(&self) -> Vec<u8> {
         self.to_data_with_subscript_index(u64::MAX)
@@ -164,9 +187,9 @@ impl<'a> Transaction<'a> {
             *offset += input.input_hash.consensus_encode(&mut buffer).unwrap();
             *offset += input.index.consensus_encode(&mut buffer).unwrap();
             if subscript_index == u64::MAX && input.signature.is_some() {
-                *offset += consensus_encode_with_size(input.signature.unwrap(), &mut buffer).unwrap()
+                *offset += consensus_encode_with_size(&input.signature.unwrap(), &mut buffer).unwrap()
             } else if subscript_index == i as u64 && input.script.is_some() {
-                *offset += consensus_encode_with_size(input.script.unwrap(), &mut buffer).unwrap()
+                *offset += consensus_encode_with_size(&input.script.unwrap(), &mut buffer).unwrap()
             } else {
                 *offset += VarInt(0 as u64).consensus_encode(&mut buffer).unwrap();
             }
@@ -176,8 +199,8 @@ impl<'a> Transaction<'a> {
         (0..outputs_len).into_iter().for_each(|i| {
             let output = &outputs[i];
             *offset += output.amount.consensus_encode(&mut buffer).unwrap();
-            if let Some(script) = output.script {
-                *offset += consensus_encode_with_size(script, &mut buffer).unwrap()
+            if let Some(script) = output.clone().script {
+                *offset += consensus_encode_with_size(&script, &mut buffer).unwrap()
             }
         });
         *offset += lock_time.consensus_encode(&mut buffer).unwrap();
@@ -187,7 +210,7 @@ impl<'a> Transaction<'a> {
         buffer
     }
 }
-impl<'a> TryRead<'a, Endian> for Transaction<'a> {
+impl<'a> TryRead<'a, Endian> for Transaction {
     fn try_read(bytes: &'a [u8], endian: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let version = bytes.read_with::<u16>(offset, endian)?;

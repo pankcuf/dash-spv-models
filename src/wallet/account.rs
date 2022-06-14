@@ -1,8 +1,10 @@
+use crate::chain::chain_parameters::ChainParameters;
+use crate::derivation_paths;
 use crate::tx::{CoinbaseTransaction, Transaction, UTXO};
 use crate::tx::transaction::ITransaction;
 use crate::wallet::wallet::Wallet;
 
-pub struct Account<'a> {
+pub struct Account<P: ChainParameters> {
     //@property (nonatomic, readonly) NSManagedObjectContext *managedObjectContext;
 
     // BIP 43 derivation paths
@@ -13,9 +15,9 @@ pub struct Account<'a> {
     pub bip32derivation_path: Option<DerivationPath>,
     pub master_contacts_derivation_path: Option<DerivationPath>,
 
-    pub wallet: Option<Wallet>, //weak
+    pub wallet: Option<Wallet<P>>, //weak
 
-    pub unique_id: &'a str,
+    pub unique_id: String,
     pub account_number: u32,
 
     /// current wallet balance excluding transactions known to be invalid
@@ -39,16 +41,16 @@ pub struct Account<'a> {
     pub has_coinbase_transaction: bool,
 
     /// returns the first unused external address
-    pub receive_address: Option<&'a str>,
+    pub receive_address: Option<String>,
 
     /// returns the first unused internal address
-    pub change_address: Option<&'a str>,
+    pub change_address: Option<String>,
 
     /// all previously generated external addresses
-    pub external_addresses: Vec<&'a str>,
+    pub external_addresses: Vec<String>,
 
     /// all previously generated internal addresses
-    pub internal_addresses: Vec<&'a str>,
+    pub internal_addresses: Vec<String>,
 
     /// all the contacts for an account
     pub contacts: Vec<PotentialOneWayFriendship>,
@@ -57,10 +59,28 @@ pub struct Account<'a> {
     pub has_an_extended_public_key_missing: bool,
 }
 
-impl<'a> Account<'a> {
-    pub fn verify_and_assign_added_derivation_paths(derivation_paths: Vec<DerivationPath>) {
+impl<P> Account<P> {
+    pub fn accountWithAccountNumber(accountNumber: u32, derivationPaths: Vec<derivation_paths::FundsPath>) {
+        Account {
+
+        }
+    return [[self alloc] initWithAccountNumber:accountNumber withDerivationPaths:derivationPaths inContext:context];
+    }
+
+    pub fn standardAccountsToAccountNumber(accountNumber)
+
+    + (NSArray<DSAccount *> *)standardAccountsToAccountNumber:(uint32_t)accountNumber onChain:(DSChain *)chain inContext:(NSManagedObjectContext *_Nullable)context {
+    NSMutableArray *accounts = [NSMutableArray array];
+    for (uint32_t i = 0; i < accountNumber + 1; i++) {
+    [accounts addObject:[self accountWithAccountNumber:i withDerivationPaths:[chain standardDerivationPathsForAccountNumber:i] inContext:context]];
+    }
+    return accounts;
+}
+
+
+pub fn verify_and_assign_added_derivation_paths(derivation_paths: Vec<derivation_path::Path<P>>) {
         for derivation_path in derivation_paths {
-            
+
         }
     }
     - (void)verifyAndAssignAddedDerivationPaths:(NSArray<DSDerivationPath *> *)derivationPaths {
@@ -97,7 +117,7 @@ impl<'a> Account<'a> {
     pub fn init_with_account_number(
         account_number: u32,
         derivation_paths: Vec<FundsDerivationPath>
-    ) -> Account<'a> {
+    ) -> Account {
         Account {
             account_number,
 

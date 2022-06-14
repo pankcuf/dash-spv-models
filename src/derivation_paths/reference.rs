@@ -1,3 +1,5 @@
+
+#[derive(PartialEq, Eq, Debug)]
 pub enum Reference {
     Unknown = 0,
     BIP32 = 1,
