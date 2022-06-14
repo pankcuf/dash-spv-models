@@ -11,9 +11,11 @@ pub enum LLMQType {
     Llmqtype400_60 = 2, // 288 blocks
     Llmqtype400_85 = 3, // 576 blocks
     Llmqtype100_67 = 4, // every 24 blocks
-    Llmqtype60_80 = 5, // 60 members, 48 (80%) threshold, one per hour
+    // Llmqtype60_80 = 5, // 60 members, 48 (80%) threshold, one per hour
+    Llmqtype60_75 = 5, // 60 members, 45 (75%) threshold, one per 12h
     Llmqtype5_60 = 100, // 24 blocks
     Llmqtype10_60 = 101, // 24 blocks
+
 }
 
 impl LLMQType {
@@ -22,7 +24,8 @@ impl LLMQType {
             LLMQType::Llmqtype5_60 => 5,
             LLMQType::Llmqtype10_60 => 10,
             LLMQType::Llmqtype50_60 => 50,
-            LLMQType::Llmqtype60_80 => 60,
+            // LLMQType::Llmqtype60_80 => 60,
+            LLMQType::Llmqtype60_75 => 60,
             LLMQType::Llmqtype400_60 => 400,
             LLMQType::Llmqtype400_85 => 400,
             LLMQType::Llmqtype100_67 => 100,
@@ -35,7 +38,8 @@ impl LLMQType {
             LLMQType::Llmqtype400_60 => 240,
             LLMQType::Llmqtype400_85 => 340,
             LLMQType::Llmqtype100_67 => 67,
-            LLMQType::Llmqtype60_80 => 48,
+            LLMQType::Llmqtype60_75 => 45,
+            // LLMQType::Llmqtype60_80 => 48,
             LLMQType::Llmqtype5_60 => 3,
             LLMQType::Llmqtype10_60 => 6,
         }
@@ -49,6 +53,7 @@ impl From<u8> for LLMQType {
             0x02 => LLMQType::Llmqtype400_60,
             0x03 => LLMQType::Llmqtype400_85,
             0x04 => LLMQType::Llmqtype100_67,
+            0x05 => LLMQType::Llmqtype60_75,
             0x64 => LLMQType::Llmqtype5_60,
             0x65 => LLMQType::Llmqtype10_60,
             _ => LLMQType::Llmqtype50_60
@@ -63,7 +68,8 @@ impl Into<u8> for LLMQType {
             LLMQType::Llmqtype400_60 => 0x02,
             LLMQType::Llmqtype400_85 => 0x03,
             LLMQType::Llmqtype100_67 => 0x04,
-            LLMQType::Llmqtype60_80 => 0x05,
+            // LLMQType::Llmqtype60_80 => 0x05,
+            LLMQType::Llmqtype60_75 => 0x05,
             LLMQType::Llmqtype5_60 => 0x64,
             LLMQType::Llmqtype10_60 => 0x65
         }
