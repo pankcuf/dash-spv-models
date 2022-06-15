@@ -4,3 +4,9 @@ pub enum ChainType {
     TestNet = 1,
     DevNet = 2,
 }
+
+impl ChainType {
+    pub fn is_mainnet(&self) -> bool {
+        self == ChainType::MainNet
+    }
+}
