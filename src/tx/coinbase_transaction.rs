@@ -8,15 +8,15 @@ use crate::tx::transaction::TransactionType::Coinbase;
 use crate::tx::transaction::Transaction;
 
 #[derive(Debug)]
-pub struct CoinbaseTransaction<'a> {
-    pub base: Transaction<'a>,
+pub struct CoinbaseTransaction {
+    pub base: Transaction,
     pub coinbase_transaction_version: u16,
     pub height: u32,
     pub merkle_root_mn_list: UInt256,
     pub merkle_root_llmq_list: Option<UInt256>,
 }
 
-impl<'a> TryRead<'a, Endian> for CoinbaseTransaction<'a> {
+impl<'a> TryRead<'a, Endian> for CoinbaseTransaction {
     fn try_read(bytes: &'a [u8], endian: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let mut base = bytes.read_with::<Transaction>(offset, endian)?;
@@ -45,7 +45,7 @@ impl<'a> TryRead<'a, Endian> for CoinbaseTransaction<'a> {
     }
 }
 
-impl<'a> CoinbaseTransaction<'a> {
+impl CoinbaseTransaction {
 
     fn payload_data(&self) -> Vec<u8> {
         let mut buffer: Vec<u8> = Vec::new();
