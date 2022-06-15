@@ -102,12 +102,24 @@ impl MasternodeEntry {
         }
     }
 
+    pub fn update_confirmed_hash(&mut self, hash: UInt256) {
+        self.confirmed_hash = hash;
+        if !self.provider_registration_transaction_hash.is_zero() {
+            self.update_confirmed_hash_hashed_with_provider_registration_transaction_hash();
+        }
+    }
+
+    pub fn update_confirmed_hash_hashed_with_provider_registration_transaction_hash(&mut self) {
+        let hash = Self::hash_confirmed_hash(self.confirmed_hash, self.provider_registration_transaction_hash);
+        self.confirmed_hash_hashed_with_provider_registration_transaction_hash = Some(hash)
+    }
+
     pub fn confirmed_hash_hashed_with_provider_registration_transaction_hash_at(&self, block_height: u32) -> Option<UInt256> {
         if self.known_confirmed_at_height.is_none() ||
             self.known_confirmed_at_height? <= block_height {
             self.confirmed_hash_hashed_with_provider_registration_transaction_hash
         } else {
-            Some(MasternodeEntry::hash_confirmed_hash(UInt256::default(), self.provider_registration_transaction_hash))
+            Some(Self::hash_confirmed_hash(UInt256::default(), self.provider_registration_transaction_hash))
         }
     }
 
@@ -118,7 +130,7 @@ impl MasternodeEntry {
     }
 
     pub fn payload_data(&self) -> UInt256 {
-        MasternodeEntry::calculate_entry_hash(
+        Self::calculate_entry_hash(
             self.provider_registration_transaction_hash,
             self.confirmed_hash,
             self.socket_address,
