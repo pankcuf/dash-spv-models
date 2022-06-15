@@ -37,6 +37,24 @@ const DERIVATION_PATH_STANDALONE_INFO_DEPTH: &str = "DP_SI_DEPTH";
 
 // pub type TransactionValidityCompletionBlock = Fn(bool, bool);
 
+
+// #[derive(Debug, Eq, PartialEq)]
+// pub enum DerivationPathType {
+//     Base,
+//     SimpleIndexed,
+//     Authentication,
+//     CreditFunding,
+//     Funds,
+//     IncomingFunds,
+//     MasternodeHolding,
+// }
+
+pub trait DerivationPath<P: ChainParameters> {
+    fn get_base(&self) -> dyn DerivationPath<P>;
+    fn get_type(&self) -> DerivationPathType;
+    fn get_reference(&self) -> Reference;
+}
+
 pub struct Path<P: ChainParameters> {
 
     pub indexes: Vec<UInt256>,
@@ -46,7 +64,7 @@ pub struct Path<P: ChainParameters> {
     pub(crate) extended_public_key: Option<dyn IKey<P>>,
 
     /// is this an open account
-    pub r#type: Type,
+    pub r#type: r#type::Type,
 
     pub signing_algorithm: Type,
 
@@ -155,7 +173,7 @@ impl<P> Path<P> {
                 //if (![self length]) return nil; //there needs to be at least 1 length
                 assert!(top_key, "Top key should exist");
                 return if let Some(top_key) = Key::key_with_seed_data(seed.clone(), self.signing_algorithm.clone()) {
-                    if let Some(derivation_path_extended_key) = top_key.private_derive_to_256_bit_derivation_path(&self) {
+                    if let Some(derivation_path_extended_key) = top_key.private_derive_to_256_bit_derivation_path(*self) {
                         derivation_path_extended_key.private_derive_to_path(index_path)
                     } else {
                         assert!(false, "Top key should exist");
@@ -171,8 +189,29 @@ impl<P> Path<P> {
     }
 
     pub fn get_string_representation_of_index(index: UInt256, hardened: bool) {
-
+        if uin2
     }
+
+    // + (NSString *)stringRepresentationOfIndex:(UInt256)index hardened:(BOOL)hardened inContext:(NSManagedObjectContext *)context {
+    // if (uint256_is_31_bits(index)) {
+    // return [NSString stringWithFormat:@"/%lu%@", (unsigned long)index.u64[0], hardened ? @"'" : @""];
+    // } else if (context) {
+    // __block NSString *rString = nil;
+    // [context performBlockAndWait:^{
+    // DSDashpayUserEntity *dashpayUserEntity = [DSDashpayUserEntity anyObjectInContext:context matching:@"associatedBlockchainIdentity.uniqueID == %@", uint256_data(index)];
+    // if (dashpayUserEntity) {
+    // DSBlockchainIdentityUsernameEntity *usernameEntity = [dashpayUserEntity.associatedBlockchainIdentity.usernames anyObject];
+    // rString = [NSString stringWithFormat:@"/%@%@", usernameEntity.stringValue, hardened ? @"'" : @""];
+    // } else {
+    // rString = [NSString stringWithFormat:@"/0x%@%@", uint256_hex(index), hardened ? @"'" : @""];
+    // }
+    // }];
+    // return rString;
+    // } else {
+    // return [NSString stringWithFormat:@"/0x%@%@", uint256_hex(index), hardened ? @"'" : @""];
+    // }
+    // }
+
 
     pub fn get_string_representation(&self) -> String {
         match self.string_representation {
@@ -246,14 +285,14 @@ impl<P> Path<P> {
 
     }
 
-    pub fn private_keys_at_index_paths<T>(&self, index_paths: Option<Vec<IndexPath<T>>>, seed: Option<Vec<u8>>) -> Option<Vec<dyn keys::IKey>> {
+    pub fn private_keys_at_index_paths<T>(&self, index_paths: Option<Vec<IndexPath<T>>>, seed: Option<Vec<u8>>) -> Option<Vec<dyn IKey<P>>> {
         match index_paths {
             None => None,
             Some(index_paths) => {
                 if seed.is_none() {
                     return None;
                 }
-                let private_keys: Vec<dyn IKey> = Vec::with_capacity(index_paths.len());
+                let private_keys: Vec<dyn IKey<P>> = Vec::with_capacity(index_paths.len());
                 if index_paths.len() == 0 {
                     return Some(private_keys);
                 }
@@ -368,13 +407,13 @@ impl<P> Path<P> {
             s = s.append(format!("_{}", index));
         }
         let path = Path::wallet_based_extended_public_key_location_string_for_unique_id(unique_id);
-        let algo = if self.signing_algorithm == keys::Type::BLS { "_BLS_" } else {""};
+        let algo = if self.signing_algorithm == Type::BLS { "_BLS_" } else {""};
         format!("{}{}{}", path, algo, s)
     }
 
-    pub fn master_blockchain_identity_contacts_derivation_path_for_account_number(account_number: u64, chain: Chain<P>) -> Self<P> {
+    pub fn master_blockchain_identity_contacts_derivation_path_for_account_number(account_number: u32, chain: Chain<P>) -> Self<P> {
         /// TODO: full uint256 derivation
-        derivationPathWithIndexes(
+        Self::derivation_path_with_indexes(
             vec![
                 uint256_from_long(FEATURE_PURPOSE),
                 uint256_from_long(chain.r#type.coin_type()),
@@ -383,15 +422,16 @@ impl<P> Path<P> {
             ],
             vec![true, true, true, true],
             derivation_paths::r#type::PartialPath,
-            keys::Type::ECDSA,
-            Reference::ContactBasedFundsRoot, chain)
+            Type::ECDSA,
+            Reference::ContactBasedFundsRoot,
+            chain)
     }
 
-    pub fn derivation_path_with_indexes<'a>(
+    pub fn derivation_path_with_indexes(
         indexes: Vec<UInt256>,
         hardened_indexes: Vec<bool>,
         r#type: r#type::Type,
-        signing_algorithm: keys::Type,
+        signing_algorithm: Type,
         reference: Reference,
         chain: Chain<P>
     ) -> Self<P> {

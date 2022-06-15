@@ -11,7 +11,7 @@ use crate::chain::chain_parameters::ChainParameters;
 use crate::derivation_paths;
 use crate::derivation_paths::{Path, Reference};
 use crate::derivation_paths::funds_path::GapLimit;
-use crate::derivation_paths::path::{BIP32_HARD, FEATURE_PURPOSE, FEATURE_PURPOSE_DASHPAY};
+use crate::derivation_paths::path::{BIP32_HARD, DerivationPath, FEATURE_PURPOSE, FEATURE_PURPOSE_DASHPAY};
 use crate::derivation_paths::simple_indexed_path::SimpleIndexedPath;
 use crate::identity::identity::Identity;
 use crate::keys::{ECDSAKey, IKey, Key, Type};
@@ -320,8 +320,8 @@ impl<P> IncomingFundsPath<P> {
         Some(arr)
     // }
     }
+}
 
-
-
+impl<P> DerivationPath<P> for IncomingFundsPath<P> {
 
 }

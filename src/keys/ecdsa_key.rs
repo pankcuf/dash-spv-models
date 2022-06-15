@@ -5,6 +5,7 @@ use dash_spv_primitives::secp256k1::ffi::{PublicKey, secp256k1_context_create, s
 use crate::chain::chain::Chain;
 use crate::chain::chain_parameters::ChainParameters;
 use crate::derivation_paths::Path;
+use crate::derivation_paths::path::DerivationPath;
 use crate::keys;
 use crate::keys::Key;
 use crate::keys::key::IKey;
@@ -127,7 +128,7 @@ impl<P: ChainParameters> IKey<P> for ECDSAKey {
         todo!()
     }
 
-    fn private_derive_to_256_bit_derivation_path(&self, derivation_path: Path<P>) -> Option<Self> {
+    fn private_derive_to_256_bit_derivation_path<DP: DerivationPath<P>>(&self, derivation_path: DP) -> Option<Self> {
         todo!()
     }
 

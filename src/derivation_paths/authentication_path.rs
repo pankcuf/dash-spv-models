@@ -360,3 +360,7 @@ impl<P> AuthenticationPath<P> {
         10
     }
 }
+
+impl<P> DerivationPath<P> for AuthenticationPath<P> {
+
+}

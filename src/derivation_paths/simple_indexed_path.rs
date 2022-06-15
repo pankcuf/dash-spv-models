@@ -5,6 +5,7 @@ use crate::chain::chain_parameters::ChainParameters;
 use crate::{derivation_paths, keys};
 use crate::chain::chain::Chain;
 use crate::derivation_paths::{Path, Reference};
+use crate::derivation_paths::path::DerivationPath;
 use crate::keys::{IKey, Key};
 
 pub struct SimpleIndexedPath<P: ChainParameters> {
@@ -209,4 +210,8 @@ impl<P> SimpleIndexedPath<P> {
     fn default_gap_limit(&self) -> usize {
         10
     }
+}
+
+impl<P> DerivationPath<P> for SimpleIndexedPath<P> {
+
 }

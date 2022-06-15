@@ -2,7 +2,7 @@ use dash_spv_primitives::crypto::data_ops::uint256_from_long;
 use crate::chain::chain::Chain;
 use crate::chain::chain_parameters::ChainParameters;
 use crate::{derivation_paths, keys};
-use crate::derivation_paths::path::FEATURE_PURPOSE;
+use crate::derivation_paths::path::{DerivationPath, FEATURE_PURPOSE};
 use crate::derivation_paths::Reference;
 use crate::derivation_paths::simple_indexed_path::SimpleIndexedPath;
 use crate::tx::transaction::ITransaction;
@@ -71,4 +71,8 @@ impl<P> MasternodeHoldingsPath<P> {
         //     }
         // }
     }
+}
+
+impl<P> DerivationPath<P> for MasternodeHoldingsPath<P> {
+
 }

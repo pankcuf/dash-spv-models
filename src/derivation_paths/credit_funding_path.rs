@@ -2,7 +2,7 @@ use dash_spv_primitives::crypto::data_ops::uint256_from_long;
 use crate::chain::chain::Chain;
 use crate::chain::chain_parameters::ChainParameters;
 use crate::derivation_paths;
-use crate::derivation_paths::path::{FEATURE_PURPOSE, FEATURE_PURPOSE_IDENTITIES, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_INVITATIONS, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_REGISTRATION, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_TOPUP, TransactionValidityCompletionBlock};
+use crate::derivation_paths::path::{DerivationPath, FEATURE_PURPOSE, FEATURE_PURPOSE_IDENTITIES, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_INVITATIONS, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_REGISTRATION, FEATURE_PURPOSE_IDENTITIES_SUBFEATURE_TOPUP, TransactionValidityCompletionBlock};
 use crate::derivation_paths::Reference;
 use crate::derivation_paths::simple_indexed_path::SimpleIndexedPath;
 use crate::keys::Type;
@@ -101,5 +101,9 @@ impl<P> CreditFundingPath<P> {
     // + (instancetype)blockchainIdentityRegistrationFundingDerivationPathForWallet:(DSWallet *)wallet;
     // + (instancetype)blockchainIdentityTopupFundingDerivationPathForWallet:(DSWallet *)wallet;
     // + (instancetype)blockchainIdentityInvitationFundingDerivationPathForWallet:(DSWallet *)wallet;
+
+}
+
+impl<P> DerivationPath<P> for CreditFundingPath<P> {
 
 }

@@ -3,6 +3,7 @@ use dash_spv_primitives::crypto::UInt160;
 use crate::chain::chain::Chain;
 use crate::chain::chain_parameters::ChainParameters;
 use crate::derivation_paths::Path;
+use crate::derivation_paths::path::DerivationPath;
 use crate::keys;
 use crate::keys::{BLSKey, ECDSAKey, Type};
 
@@ -12,7 +13,7 @@ pub trait IKey<P: ChainParameters> {
 
     fn forget_private_key(&mut self);
     fn private_derive_to_path(&self, index_path: IndexPath<usize>) -> Option<Self<P>>;
-    fn private_derive_to_256_bit_derivation_path(&self, derivation_path: Path<P>) -> Option<Self<P>>;
+    fn private_derive_to_256_bit_derivation_path<DP: DerivationPath<P>>(&self, derivation_path: DP) -> Option<Self<P>>;
     fn serialized_private_key_for_chain(&self, chain: Chain<P>) -> Option<String>;
     fn public_key_from_extended_public_key_data_at_index_path(data: Option<Vec<u8>>, index_path: IndexPath<usize>) -> Option<Vec<u8>>;
     fn key_with_public_key_data(data: Option<Vec<u8>>) -> Option<Self<P>>;

@@ -10,6 +10,7 @@ use crate::{derivation_paths, keys};
 use crate::chain::chain_parameters::ChainParameters;
 use crate::common::ChainType;
 use crate::derivation_paths::{Path, Reference};
+use crate::derivation_paths::path::DerivationPath;
 use crate::keys::{ECDSAKey, Key};
 
 pub const EXTENDED_0_PUBKEY_KEY_BIP44_V0: &str = "masterpubkeyBIP44"; // these are old and need to be retired
@@ -402,4 +403,8 @@ impl<P: ChainParameters> FundsPath<P> {
             None
         }
     }
+}
+
+impl<P> DerivationPath<P> for FundsPath<P> {
+
 }

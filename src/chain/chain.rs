@@ -4,6 +4,9 @@ use dash_spv_primitives::crypto::UInt256;
 use crate::chain::chain_parameters::ChainParameters;
 use crate::chain::checkpoint::Checkpoint;
 use crate::common::{Block, ChainType, LLMQType};
+use crate::derivation_paths::funds_path::FundsPath;
+use crate::derivation_paths::Path;
+use crate::derivation_paths::path::DerivationPath;
 use crate::identity::identity::Identity;
 use crate::tx::direction::Direction;
 use crate::tx::Transaction;
@@ -290,7 +293,7 @@ pub struct Chain<P: ChainParameters> {
     checkpoints_by_height_dictionary: HashMap<u32, Checkpoint>,
 
 
-    viewing_account: Account,
+    viewing_account: Account<P>,
     estimatedBlockHeights: HashMap<i32, Vec<Peer>>,
     cached_minimum_difficulty_blocks: u32,
     best_estimated_block_height: u32,
@@ -372,11 +375,22 @@ impl<P> Chain<P> {
     }
 
     /*! @brief Returns all standard derivaton paths used for the chain based on the account number.  */
-    pub fn standard_derivation_paths_for_account_number(account_number: u32) -> Vec<DerivationPath> {
-
-
-
+    pub fn standard_derivation_paths_for_account_number<DP: DerivationPath<P>>(&self, account_number: u32) -> Vec<DP> {
+        if account_number == 0 {
+            vec![
+                FundsPath::bip32_derivation_path_for_account_number(account_number, self),
+                FundsPath::bip44_derivation_path_for_account_number(account_number, self),
+                Path::master_blockchain_identity_contacts_derivation_path_for_account_number(account_number, self)
+            ]
+        } else {
+            vec![
+                // don't include BIP32 derivation path on higher accounts
+                FundsPath::bip44_derivation_path_for_account_number(account_number, self),
+                Path::master_blockchain_identity_contacts_derivation_path_for_account_number(account_number, self)
+            ]
+        }
     }
+
     /*! @brief Unregister a wallet from the chain, it will no longer be loaded or used.  */
     pub fn unregister_wallet(&self, wallet: Wallet) {
 
