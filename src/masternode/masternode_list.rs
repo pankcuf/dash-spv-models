@@ -188,4 +188,20 @@ impl MasternodeList {
             .find(|&entry| entry.llmq_hash == quorum_hash)
     }
 
+    pub fn quorum_entry_for_lock_request_id(&self, request_id: UInt256, llmq_type: LLMQType) -> Option<&LLMQEntry> {
+        let mut first_quorum: Option<&LLMQEntry> = None;
+        let mut lowest_value = UInt256::MAX;
+        self.quorums
+            .get(&llmq_type)?
+            .values()
+            .for_each(|entry| {
+                let ordering_hash = entry.ordering_hash_for_request_id(request_id, llmq_type).reversed();
+                if lowest_value > ordering_hash {
+                    lowest_value = ordering_hash;
+                    first_quorum = Some(entry);
+                }
+            });
+        first_quorum
+    }
+
 }

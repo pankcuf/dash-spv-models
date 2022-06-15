@@ -163,6 +163,16 @@ impl LLMQEntry {
         buffer
     }
 
+    pub fn ordering_hash_for_request_id(&self, request_id: UInt256, llmq_type: LLMQType) -> UInt256 {
+        let mut buffer: Vec<u8> = Vec::new();
+        let offset: &mut usize = &mut 0;
+        let llmq_type = VarInt(llmq_type as u64);
+        *offset += llmq_type.consensus_encode(&mut buffer).unwrap();
+        *offset += self.llmq_hash.consensus_encode(&mut buffer).unwrap();
+        *offset += request_id.consensus_encode(&mut buffer).unwrap();
+        UInt256(sha256d::Hash::hash(&buffer).into_inner())
+    }
+
     pub fn generate_commitment_hash(&mut self) -> UInt256 {
         if self.commitment_hash.is_none() {
             let data = self.commitment_data();
