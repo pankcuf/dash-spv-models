@@ -180,4 +180,12 @@ impl MasternodeList {
         modifier.consensus_encode(&mut buffer).unwrap();
         Some(UInt256(sha256::Hash::hash(&buffer).into_inner()))
     }
+
+    pub fn quorum_entry_for_platform_with_quorum_hash(&self, quorum_hash: UInt256, llmq_type: LLMQType) -> Option<&LLMQEntry> {
+        self.quorums
+            .get(&llmq_type)?
+            .values()
+            .find(|&entry| entry.llmq_hash == quorum_hash)
+    }
+
 }
