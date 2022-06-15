@@ -9,7 +9,7 @@ use dash_spv_primitives::hashes::{Hash, sha256, sha256d};
 use crate::common::block_data::BlockData;
 use crate::common::socket_address::SocketAddress;
 
-#[derive(Clone)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
     pub provider_registration_transaction_hash: UInt256,
     pub confirmed_hash: UInt256,

@@ -12,7 +12,7 @@ use crate::common::llmq_type::LLMQType;
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
 pub const LLMQ_INDEXED_VERSION: u16 = 2;
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Ord, PartialOrd, PartialEq, Eq)]
 pub struct LLMQEntry {
     pub version: u16,
     pub llmq_hash: UInt256,

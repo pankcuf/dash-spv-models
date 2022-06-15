@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use byte::BytesExt;
 use byte::ctx::Bytes;
 use dash_spv_primitives::consensus::encode::VarInt;
@@ -26,8 +26,8 @@ pub struct MNListDiff<'a> {
     pub deleted_masternode_hashes: Vec<UInt256>,
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
 
-    pub deleted_quorums: HashMap<LLMQType, Vec<UInt256>>,
-    pub added_quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
+    pub deleted_quorums: BTreeMap<LLMQType, Vec<UInt256>>,
+    pub added_quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
 
     pub length: usize,
     pub block_height: u32,
@@ -67,8 +67,8 @@ impl<'a> MNListDiff<'a> {
                 acc
             });
 
-        let mut deleted_quorums: HashMap<LLMQType, Vec<UInt256>> = HashMap::new();
-        let mut added_quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>> = HashMap::new();
+        let mut deleted_quorums: BTreeMap<LLMQType, Vec<UInt256>> = BTreeMap::new();
+        let mut added_quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>> = BTreeMap::new();
         let quorums_active = coinbase_transaction.coinbase_transaction_version >= 2;
         if quorums_active {
             let deleted_quorums_count = VarInt::from_bytes(message, offset)?.0;
@@ -85,7 +85,7 @@ impl<'a> MNListDiff<'a> {
                 if let Some(entry) = LLMQEntry::from_bytes(message, offset) {
                     added_quorums
                         .entry(entry.llmq_type)
-                        .or_insert(HashMap::new())
+                        .or_insert(BTreeMap::new())
                         .insert(entry.llmq_hash, entry);
                 }
             }

@@ -1,5 +1,5 @@
 use std::cmp::min;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::byte_util::{merkle_root_from_hashes, Reversable, Zeroable};
 use dash_spv_primitives::crypto::UInt256;
@@ -9,14 +9,14 @@ use crate::masternode::llmq_entry::LLMQEntry;
 use crate::masternode::masternode_entry::MasternodeEntry;
 use crate::tx::coinbase_transaction::CoinbaseTransaction;
 
-#[derive(Clone)]
+#[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeList {
     pub block_hash: UInt256,
     pub known_height: u32,
     pub masternode_merkle_root: Option<UInt256>,
     pub llmq_merkle_root: Option<UInt256>,
     pub masternodes: BTreeMap<UInt256, MasternodeEntry>,
-    pub quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
+    pub quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
 }
 
 impl<'a> std::fmt::Debug for MasternodeList {
@@ -35,7 +35,7 @@ impl<'a> std::fmt::Debug for MasternodeList {
 impl MasternodeList {
     pub fn new(
         masternodes: BTreeMap<UInt256, MasternodeEntry>,
-        quorums: HashMap<LLMQType, HashMap<UInt256, LLMQEntry>>,
+        quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
         block_hash: UInt256,
         block_height: u32,
         quorums_active: bool
