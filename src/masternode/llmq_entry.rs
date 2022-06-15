@@ -13,7 +13,6 @@ pub const LLMQ_DEFAULT_VERSION: u16 = 1;
 pub const LLMQ_INDEXED_VERSION: u16 = 2;
 
 #[derive(Clone, PartialEq, Eq)]
-// pub struct LLMQEntry<'a> {
 pub struct LLMQEntry {
     pub version: u16,
     pub llmq_hash: UInt256,
@@ -69,7 +68,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
         let threshold_signature = bytes.read_with::<UInt768>(offset, LE)?;
         let all_commitment_aggregated_signature = bytes.read_with::<UInt768>(offset, LE)?;
         let llmq_type: LLMQType = llmq_type.into();
-        let q_data = LLMQEntry::generate_data(
+        let q_data = Self::generate_data(
             version, llmq_type, llmq_hash,
             signers_count.clone(), signers_bitset,
             valid_members_count.clone(), valid_members_bitset,
@@ -133,7 +132,7 @@ impl LLMQEntry {
     }
 
     pub fn to_data(&self) -> Vec<u8> {
-        LLMQEntry::generate_data(
+        Self::generate_data(
             self.version, self.llmq_type, self.llmq_hash,
             self.signers_count, &self.signers_bitset,
             self.valid_members_count, &self.valid_members_bitset,
