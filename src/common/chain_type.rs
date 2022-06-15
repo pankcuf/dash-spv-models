@@ -7,6 +7,6 @@ pub enum ChainType {
 
 impl ChainType {
     pub fn is_mainnet(&self) -> bool {
-        self == ChainType::MainNet
+        *self == ChainType::MainNet
     }
 }
