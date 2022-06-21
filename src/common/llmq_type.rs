@@ -3,60 +3,113 @@ use byte::{BytesExt, TryRead, TryWrite};
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::byte_util::BytesDecodable;
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Hash, Ord)]
+pub struct DKGParams {
+    pub interval: u32, // one DKG per hour
+    pub phase_blocks: u32,
+    pub mining_window_start: u32, // dkg_phase_blocks * 5 = after finalization
+    pub mining_window_end: u32,
+    pub bad_votes_threshold: u32,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Hash, Ord)]
+pub struct LLMQParams {
+    pub r#type: LLMQType,
+    pub name: &'static str,
+    pub size: u32,
+    pub min_size: u32,
+    pub threshold: u32,
+    pub dkg_params: DKGParams,
+    pub signing_active_quorum_count: u32, // just a few ones to allow easier testing
+    pub keep_old_connections: u32,
+    pub recovery_members: u32,
+}
+
+pub const DKG_TEST: DKGParams = DKGParams { interval: 24, phase_blocks: 2, mining_window_start: 10, mining_window_end: 18, bad_votes_threshold: 2 };
+pub const DKG_DEVNET: DKGParams = DKGParams { interval: 24, phase_blocks: 2, mining_window_start: 10, mining_window_end: 18, bad_votes_threshold: 7 };
+pub const DKG_DEVNET_DIP_0024: DKGParams = DKGParams { interval: 48, phase_blocks: 2, mining_window_start: 10, mining_window_end: 18, bad_votes_threshold: 7 };
+pub const DKG_50_60: DKGParams = DKGParams { interval: 24, phase_blocks: 2, mining_window_start: 10, mining_window_end: 18, bad_votes_threshold: 40 };
+pub const DKG_400_60: DKGParams = DKGParams { interval: 24*12, phase_blocks: 4, mining_window_start: 20, mining_window_end: 28, bad_votes_threshold: 300 };
+pub const DKG_400_85: DKGParams = DKGParams { interval: 24*24, phase_blocks: 4, mining_window_start: 20, mining_window_end: 48, bad_votes_threshold: 300 };
+pub const DKG_100_67: DKGParams = DKGParams { interval: 2, phase_blocks: 2, mining_window_start: 10, mining_window_end: 18, bad_votes_threshold: 80 };
+pub const DKG_60_75: DKGParams = DKGParams { interval: 24*2, phase_blocks: 4, mining_window_start: 20, mining_window_end: 28, bad_votes_threshold: 48 };
+
+
+pub const LLMQ_TEST: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTest, name: "llmq_test", size: 4, min_size: 2, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
+pub const LLMQ_V017: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTestV17, name: "llmq_test_v17", size: 3, min_size: 2, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
+pub const LLMQ_0024: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeDevnetDIP0024, name: "llmq_devnet_dip0024", size: 8, min_size: 6, threshold: 4, dkg_params: DKG_DEVNET_DIP_0024, signing_active_quorum_count: 2, keep_old_connections: 4, recovery_members: 4 };
+pub const LLMQ_TEST_DIP00024: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTestDIP0024, name: "llmq_test_dip0024", size: 4, min_size: 3, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
+pub const LLMQ_DEVNET: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeDevnet, name: "llmq_devnet", size: 12, min_size: 7, threshold: 6, dkg_params: DKG_DEVNET, signing_active_quorum_count: 4, keep_old_connections: 4, recovery_members: 6 };
+
+pub const LLMQ_50_60: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype50_60, name: "llmq_50_60", size: 50, min_size: 40, threshold: 30, dkg_params: DKG_50_60, signing_active_quorum_count: 24, keep_old_connections: 25, recovery_members: 25 };
+pub const LLMQ_400_60: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype400_60, name: "llmq_400_60", size: 400, min_size: 300, threshold: 240, dkg_params: DKG_400_60, signing_active_quorum_count: 4, keep_old_connections: 5, recovery_members: 100 };
+pub const LLMQ_400_85: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype400_60, name: "llmq_400_85", size: 400, min_size: 350, threshold: 340, dkg_params: DKG_400_85, signing_active_quorum_count: 4, keep_old_connections: 5, recovery_members: 100 };
+pub const LLMQ_100_67: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype100_67, name: "llmq_100_67", size: 100, min_size: 80, threshold: 67, dkg_params: DKG_100_67, signing_active_quorum_count: 24, keep_old_connections: 25, recovery_members: 50 };
+pub const LLMQ_60_75: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype60_75, name: "llmq_60_75", size: 60, min_size: 50, threshold: 45, dkg_params: DKG_60_75, signing_active_quorum_count: 16, keep_old_connections: 64, recovery_members: 25 };
+
+
 #[warn(non_camel_case_types)]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Hash, Ord)]
 pub enum LLMQType {
-    Llmqtype50_60 = 1,  // every 24 blocks
-    Llmqtype400_60 = 2, // 288 blocks
-    Llmqtype400_85 = 3, // 576 blocks
-    Llmqtype100_67 = 4, // every 24 blocks
-    // Llmqtype60_80 = 5, // 60 members, 48 (80%) threshold, one per hour
-    Llmqtype60_75 = 5, // 60 members, 45 (75%) threshold, one per 12h
-    Llmqtype5_60 = 100, // 24 blocks
-    Llmqtype10_60 = 101, // 24 blocks
+    Llmqtype50_60 = 1, // 50 members, 30 (60%) threshold, one per hour
+    Llmqtype400_60 = 2, // 400 members, 240 (60%) threshold, one every 12 hours
+    Llmqtype400_85 = 3, // 400 members, 340 (85%) threshold, one every 24 hours
+    Llmqtype100_67 = 4, // 100 members, 67 (67%) threshold, one per hour
+    Llmqtype60_75 = 5, // 60 members, 45 (75%) threshold, one every 12 hours
 
+    LlmqtypeTest = 100, // 3 members, 2 (66%) threshold, one per hour
+    LlmqtypeDevnet = 101, // 10 members, 6 (60%) threshold, one per hour
+    LlmqtypeTestV17 = 102, // 3 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
+    LlmqtypeTestDIP0024 = 103, // 4 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
+    LlmqtypeDevnetDIP0024 = 105, // 8 members, 4 (50%) threshold, one per hour. Params might differ when -llmqdevnetparams is used
 }
 
 impl LLMQType {
-    pub fn size(&self) -> u32 {
+    pub fn params(&self) -> LLMQParams {
         match self {
-            LLMQType::Llmqtype5_60 => 5,
-            LLMQType::Llmqtype10_60 => 10,
-            LLMQType::Llmqtype50_60 => 50,
-            // LLMQType::Llmqtype60_80 => 60,
-            LLMQType::Llmqtype60_75 => 60,
-            LLMQType::Llmqtype400_60 => 400,
-            LLMQType::Llmqtype400_85 => 400,
-            LLMQType::Llmqtype100_67 => 100,
+            LLMQType::Llmqtype50_60 => LLMQ_50_60,
+            LLMQType::Llmqtype400_60 => LLMQ_400_60,
+            LLMQType::Llmqtype400_85 => LLMQ_400_85,
+            LLMQType::Llmqtype100_67 => LLMQ_100_67,
+            LLMQType::Llmqtype60_75 => LLMQ_60_75,
+            LLMQType::LlmqtypeTest => LLMQ_TEST,
+            LLMQType::LlmqtypeDevnet => LLMQ_DEVNET,
+            LLMQType::LlmqtypeTestV17 => LLMQ_V017,
+            LLMQType::LlmqtypeTestDIP0024 => LLMQ_TEST_DIP00024,
+            LLMQType::LlmqtypeDevnetDIP0024 => LLMQ_0024,
         }
+    }
+    pub fn size(&self) -> u32 {
+        self.params().size
     }
 
     pub fn threshold(&self) -> u32 {
-        match self {
-            LLMQType::Llmqtype50_60 => 30,
-            LLMQType::Llmqtype400_60 => 240,
-            LLMQType::Llmqtype400_85 => 340,
-            LLMQType::Llmqtype100_67 => 67,
-            LLMQType::Llmqtype60_75 => 45,
-            // LLMQType::Llmqtype60_80 => 48,
-            LLMQType::Llmqtype5_60 => 3,
-            LLMQType::Llmqtype10_60 => 6,
-        }
+        self.params().threshold
+    }
+
+    pub fn active_quorum_count(&self) -> u32 {
+        self.params().signing_active_quorum_count
     }
 }
+
 
 impl From<u8> for LLMQType {
     fn from(orig: u8) -> Self {
         match orig {
-            0x01 => LLMQType::Llmqtype50_60,
-            0x02 => LLMQType::Llmqtype400_60,
-            0x03 => LLMQType::Llmqtype400_85,
-            0x04 => LLMQType::Llmqtype100_67,
-            0x05 => LLMQType::Llmqtype60_75,
-            0x64 => LLMQType::Llmqtype5_60,
-            0x65 => LLMQType::Llmqtype10_60,
-            _ => LLMQType::Llmqtype50_60
+            1 => LLMQType::Llmqtype50_60,
+            2 => LLMQType::Llmqtype400_60,
+            3 => LLMQType::Llmqtype400_85,
+            4 => LLMQType::Llmqtype100_67,
+            5 => LLMQType::Llmqtype60_75,
+            100 => LLMQType::LlmqtypeTest,
+            101 => LLMQType::LlmqtypeDevnet,
+            102 => LLMQType::LlmqtypeTestV17,
+            103 => LLMQType::LlmqtypeTestDIP0024,
+            105 => LLMQType::LlmqtypeDevnetDIP0024,
+            _ => panic!("Bad value for transforming LLMQType::from({})!", orig)
         }
     }
 }
@@ -64,14 +117,16 @@ impl From<u8> for LLMQType {
 impl Into<u8> for LLMQType {
     fn into(self) -> u8 {
         match self {
-            LLMQType::Llmqtype50_60 => 0x01,
-            LLMQType::Llmqtype400_60 => 0x02,
-            LLMQType::Llmqtype400_85 => 0x03,
-            LLMQType::Llmqtype100_67 => 0x04,
-            // LLMQType::Llmqtype60_80 => 0x05,
-            LLMQType::Llmqtype60_75 => 0x05,
-            LLMQType::Llmqtype5_60 => 0x64,
-            LLMQType::Llmqtype10_60 => 0x65
+            LLMQType::Llmqtype50_60 => 1,
+            LLMQType::Llmqtype400_60 => 2,
+            LLMQType::Llmqtype400_85 => 3,
+            LLMQType::Llmqtype100_67 => 4,
+            LLMQType::Llmqtype60_75 => 5,
+            LLMQType::LlmqtypeTest => 100,
+            LLMQType::LlmqtypeDevnet => 101,
+            LLMQType::LlmqtypeTestV17 => 102,
+            LLMQType::LlmqtypeTestDIP0024 => 103,
+            LLMQType::LlmqtypeDevnetDIP0024 => 105,
         }
     }
 }
@@ -100,3 +155,6 @@ impl<'a> BytesDecodable<'a, LLMQType> for LLMQType {
         }
     }
 }
+
+
+

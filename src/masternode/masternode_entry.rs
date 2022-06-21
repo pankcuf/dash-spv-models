@@ -6,7 +6,7 @@ use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::crypto::byte_util::Zeroable;
 use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
 use dash_spv_primitives::hashes::{Hash, sha256, sha256d};
-use crate::common::block_data::BlockData;
+use crate::common::block::Block;
 use crate::common::socket_address::SocketAddress;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -16,9 +16,9 @@ pub struct MasternodeEntry {
     pub confirmed_hash_hashed_with_provider_registration_transaction_hash: Option<UInt256>,
     pub socket_address: SocketAddress,
     pub operator_public_key: UInt384,
-    pub previous_operator_public_keys: BTreeMap<BlockData, UInt384>,
-    pub previous_entry_hashes: BTreeMap<BlockData, UInt256>,
-    pub previous_validity: BTreeMap<BlockData, bool>,
+    pub previous_operator_public_keys: BTreeMap<Block, UInt384>,
+    pub previous_entry_hashes: BTreeMap<Block, UInt256>,
+    pub previous_validity: BTreeMap<Block, bool>,
     pub known_confirmed_at_height: Option<u32>,
     pub update_height: u32,
     pub key_id_voting: UInt160,
@@ -154,7 +154,7 @@ impl MasternodeEntry {
         }
         let mut min_distance = u32::MAX;
         let mut is_valid = self.is_valid;
-        for (BlockData { height, .. }, validity) in self.previous_validity.clone() {
+        for (Block { height, .. }, validity) in self.previous_validity.clone() {
             if height <= block_height {
                 continue;
             }
@@ -173,7 +173,7 @@ impl MasternodeEntry {
         }
         let mut min_distance = u32::MAX;
         let mut used_previous_operator_public_key_at_block_hash = self.operator_public_key;
-        for (BlockData{height,..}, key) in self.previous_operator_public_keys.clone() {
+        for (Block {height,..}, key) in self.previous_operator_public_keys.clone() {
             if height <= block_height {
                 continue;
             }
@@ -191,10 +191,10 @@ impl MasternodeEntry {
             block_height == u32::MAX {
             return self.entry_hash.clone();
         }
-        let hashes: BTreeMap<BlockData, UInt256> = self.previous_entry_hashes.clone();
+        let hashes: BTreeMap<Block, UInt256> = self.previous_entry_hashes.clone();
         let mut min_distance = u32::MAX;
         let mut used_hash = self.entry_hash.clone();
-        for (BlockData { height, .. }, hash) in hashes {
+        for (Block { height, .. }, hash) in hashes {
             if height <= block_height {
                 continue;
             }
@@ -213,7 +213,7 @@ impl MasternodeEntry {
         short_hex_string_from(&self.provider_registration_transaction_hash.0)
     }
 
-    pub fn update_with_previous_entry(&mut self, entry: &mut MasternodeEntry, block: BlockData) {
+    pub fn update_with_previous_entry(&mut self, entry: &mut MasternodeEntry, block: Block) {
         self.previous_validity = (*entry)
             .previous_validity
             .clone()
