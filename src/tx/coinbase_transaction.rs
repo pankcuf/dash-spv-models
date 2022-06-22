@@ -4,8 +4,8 @@ use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256d};
-use crate::tx::transaction::TransactionType::Coinbase;
-use crate::tx::transaction::Transaction;
+use crate::tx::TransactionType::Coinbase;
+use crate::tx::Transaction;
 
 #[derive(Debug)]
 pub struct CoinbaseTransaction {

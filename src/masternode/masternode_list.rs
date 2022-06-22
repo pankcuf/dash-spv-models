@@ -4,10 +4,9 @@ use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::byte_util::{merkle_root_from_hashes, Reversable, Zeroable};
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256};
-use crate::common::llmq_type::LLMQType;
-use crate::masternode::llmq_entry::LLMQEntry;
-use crate::masternode::masternode_entry::MasternodeEntry;
-use crate::tx::coinbase_transaction::CoinbaseTransaction;
+use crate::common::LLMQType;
+use crate::masternode::{LLMQEntry, MasternodeEntry};
+use crate::tx::CoinbaseTransaction;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeList {

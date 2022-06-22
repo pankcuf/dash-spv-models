@@ -7,7 +7,7 @@ use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::hashes::hex::ToHex;
 use dash_spv_primitives::hashes::{Hash, sha256d};
-use crate::common::llmq_type::LLMQType;
+use crate::common::LLMQType;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
 pub const LLMQ_INDEXED_VERSION: u16 = 2;

@@ -6,8 +6,8 @@ use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::crypto::byte_util::Zeroable;
 use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
 use dash_spv_primitives::hashes::{Hash, sha256, sha256d};
-use crate::common::block::Block;
-use crate::common::socket_address::SocketAddress;
+use crate::common::Block;
+use crate::common::SocketAddress;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
