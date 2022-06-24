@@ -26,7 +26,7 @@ pub struct LLMQEntry {
     pub signers_count: VarInt,
     pub valid_members_bitset: Vec<u8>,
     pub valid_members_count: VarInt,
-    pub length: usize,
+    // pub length: usize,
     pub entry_hash: UInt256,
     pub verified: bool,
     pub saved: bool,
@@ -47,7 +47,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
     fn try_read(bytes: &'a [u8], _ctx: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
         let version = bytes.read_with::<u16>(offset, LE)?;
-        let llmq_type = bytes.read_with::<u8>(offset, LE)?;
+        let llmq_type = bytes.read_with::<LLMQType>(offset, LE)?;
         let llmq_hash = bytes.read_with::<UInt256>(offset, LE)?;
         let index = match version {
             LLMQ_DEFAULT_VERSION => None,
@@ -67,7 +67,6 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
         let verification_vector_hash = bytes.read_with::<UInt256>(offset, LE)?;
         let threshold_signature = bytes.read_with::<UInt768>(offset, LE)?;
         let all_commitment_aggregated_signature = bytes.read_with::<UInt768>(offset, LE)?;
-        let llmq_type: LLMQType = llmq_type.into();
         let q_data = Self::generate_data(
             version, llmq_type, llmq_hash,
             signers_count.clone(), signers_bitset,
@@ -88,7 +87,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
             valid_members_count: valid_members_count.clone(),
             signers_bitset: signers_bitset.to_vec(),
             valid_members_bitset: valid_members_bitset.to_vec(),
-            length: *offset,
+            // length: *offset,
             entry_hash,
             verified: false,
             saved: false,
