@@ -26,7 +26,6 @@ pub struct LLMQEntry {
     pub signers_count: VarInt,
     pub valid_members_bitset: Vec<u8>,
     pub valid_members_count: VarInt,
-    // pub length: usize,
     pub entry_hash: UInt256,
     pub verified: bool,
     pub saved: bool,
@@ -35,10 +34,22 @@ pub struct LLMQEntry {
 impl std::fmt::Debug for LLMQEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LLMQEntry")
+            .field("version", &self.version)
             .field("llmq_hash", &self.llmq_hash)
-            .field("entry_hash", &self.entry_hash)
+            .field("index", &self.index)
+            .field("public_key", &self.public_key)
+            .field("threshold_signature", &self.threshold_signature)
+            .field("verification_vector_hash", &self.verification_vector_hash)
+            .field("all_commitment_aggregated_signature", &self.all_commitment_aggregated_signature)
+            .field("llmq_type", &self.llmq_type)
             .field("signers_bitset", &self.signers_bitset.to_hex())
             .field("signers_bitset_length", &self.signers_bitset.len())
+            .field("signers_count", &self.signers_count)
+            .field("valid_members_bitset", &self.valid_members_bitset.to_hex())
+            .field("valid_members_bitset_length", &self.valid_members_bitset.len())
+            .field("valid_members_count", &self.valid_members_count)
+            .field("entry_hash", &self.entry_hash)
+            .field("commitment_hash", &self.commitment_hash)
             .finish()
     }
 }
@@ -87,7 +98,6 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
             valid_members_count: valid_members_count.clone(),
             signers_bitset: signers_bitset.to_vec(),
             valid_members_bitset: valid_members_bitset.to_vec(),
-            // length: *offset,
             entry_hash,
             verified: false,
             saved: false,
