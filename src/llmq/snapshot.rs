@@ -1,9 +1,10 @@
 use byte::ctx::{Bytes, Endian};
 use byte::{BytesExt, LE, TryRead};
 use dash_spv_primitives::consensus::encode::VarInt;
+use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQSnapshotSkipMode;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct LLMQSnapshot<'a> {
     // The bitset of nodes already in quarters at the start of cycle at height n
     // (masternodeListSize + 7)/8
@@ -12,6 +13,15 @@ pub struct LLMQSnapshot<'a> {
     pub skip_list: Vec<u32>,
     //  Mode of the skip list
     pub skip_list_mode: LLMQSnapshotSkipMode,
+}
+impl<'a> std::fmt::Debug for LLMQSnapshot<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LLMQSnapshot")
+            .field("member_list", &self.member_list.to_hex())
+            .field("skip_list", &self.skip_list.iter())
+            .field("skip_list_mode", &self.skip_list_mode)
+            .finish()
+    }
 }
 impl<'a> TryRead<'a, Endian> for LLMQSnapshot<'a> {
     fn try_read(bytes: &'a [u8], _endian: Endian) -> byte::Result<(Self, usize)> {
@@ -24,11 +34,7 @@ impl<'a> TryRead<'a, Endian> for LLMQSnapshot<'a> {
         for _i in 0..skip_list_size {
             skip_list.push(bytes.read_with::<u32>(offset, LE)?);
         }
-        Ok((Self {
-            member_list,
-            skip_list,
-            skip_list_mode
-        }, *offset))
+        Ok((Self { member_list, skip_list, skip_list_mode }, *offset))
     }
 }
 

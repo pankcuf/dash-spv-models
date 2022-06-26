@@ -16,7 +16,7 @@ pub const LLMQ_INDEXED_VERSION: u16 = 2;
 pub struct LLMQEntry {
     pub version: u16,
     pub llmq_hash: UInt256,
-    pub index: Option<u32>,
+    pub index: Option<u16>,
     pub public_key: UInt384,
     pub threshold_signature: UInt768,
     pub verification_vector_hash: UInt256,
@@ -60,13 +60,10 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
         let version = bytes.read_with::<u16>(offset, LE)?;
         let llmq_type = bytes.read_with::<LLMQType>(offset, LE)?;
         let llmq_hash = bytes.read_with::<UInt256>(offset, LE)?;
-        let index = match version {
-            LLMQ_DEFAULT_VERSION => None,
-            LLMQ_INDEXED_VERSION => {
-                let index = bytes.read_with::<u32>(offset, LE)?;
-                Some(index)
-            } ,
-            _ => None,
+        let index = if version >= LLMQ_INDEXED_VERSION {
+            Some(bytes.read_with::<u16>(offset, LE)?)
+        } else {
+            None
         };
         let signers_count = bytes.read_with::<VarInt>(offset, LE)?;
         let signers_buffer_length: usize = ((signers_count.0 as usize) + 7) / 8;

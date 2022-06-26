@@ -40,6 +40,7 @@ pub const DKG_60_75: DKGParams = DKGParams { interval: 24*2, phase_blocks: 4, mi
 pub const LLMQ_TEST: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTest, name: "llmq_test", size: 4, min_size: 2, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
 pub const LLMQ_V017: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTestV17, name: "llmq_test_v17", size: 3, min_size: 2, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
 pub const LLMQ_0024: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeDevnetDIP0024, name: "llmq_devnet_dip0024", size: 8, min_size: 6, threshold: 4, dkg_params: DKG_DEVNET_DIP_0024, signing_active_quorum_count: 2, keep_old_connections: 4, recovery_members: 4 };
+pub const LLMQ_0024_333: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeDevnetDIP0024, name: "llmq_devnet_dip0024", size: 8, min_size: 6, threshold: 4, dkg_params: DKG_DEVNET_DIP_0024, signing_active_quorum_count: 2, keep_old_connections: 4, recovery_members: 4 };
 pub const LLMQ_TEST_DIP00024: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeTestDIP0024, name: "llmq_test_dip0024", size: 4, min_size: 3, threshold: 2, dkg_params: DKG_TEST, signing_active_quorum_count: 2, keep_old_connections: 3, recovery_members: 3 };
 pub const LLMQ_DEVNET: LLMQParams = LLMQParams { r#type: LLMQType::LlmqtypeDevnet, name: "llmq_devnet", size: 12, min_size: 7, threshold: 6, dkg_params: DKG_DEVNET, signing_active_quorum_count: 4, keep_old_connections: 4, recovery_members: 6 };
 
@@ -54,6 +55,7 @@ pub const LLMQ_60_75: LLMQParams = LLMQParams { r#type: LLMQType::Llmqtype60_75,
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Hash, Ord)]
 pub enum LLMQType {
+    LlmqtypeUnknown = 0, //other kind of
     Llmqtype50_60 = 1, // 50 members, 30 (60%) threshold, one per hour
     Llmqtype400_60 = 2, // 400 members, 240 (60%) threshold, one every 12 hours
     Llmqtype400_85 = 3, // 400 members, 340 (85%) threshold, one every 24 hours
@@ -65,6 +67,7 @@ pub enum LLMQType {
     LlmqtypeTestV17 = 102, // 3 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
     LlmqtypeTestDIP0024 = 103, // 4 members, 2 (66%) threshold, one per hour. Params might differ when -llmqtestparams is used
     LlmqtypeDevnetDIP0024 = 105, // 8 members, 4 (50%) threshold, one per hour. Params might differ when -llmqdevnetparams is used
+    LlmqtypeDevnet333DIP0024 = 106, // 8 members, 4 (50%) threshold, one per hour. Params might differ when -llmqdevnetparams is used
 }
 
 impl LLMQType {
@@ -80,6 +83,8 @@ impl LLMQType {
             LLMQType::LlmqtypeTestV17 => LLMQ_V017,
             LLMQType::LlmqtypeTestDIP0024 => LLMQ_TEST_DIP00024,
             LLMQType::LlmqtypeDevnetDIP0024 => LLMQ_0024,
+            LLMQType::LlmqtypeDevnet333DIP0024 => LLMQ_0024_333,
+            LLMQType::LlmqtypeUnknown => LLMQ_DEVNET,
         }
     }
     pub fn size(&self) -> u32 {
@@ -109,7 +114,8 @@ impl From<u8> for LLMQType {
             102 => LLMQType::LlmqtypeTestV17,
             103 => LLMQType::LlmqtypeTestDIP0024,
             105 => LLMQType::LlmqtypeDevnetDIP0024,
-            _ => panic!("Bad value for transforming LLMQType::from({})!", orig)
+            106 => LLMQType::LlmqtypeDevnet333DIP0024,
+            _ => LLMQType::LlmqtypeUnknown,
         }
     }
 }
@@ -117,6 +123,7 @@ impl From<u8> for LLMQType {
 impl Into<u8> for LLMQType {
     fn into(self) -> u8 {
         match self {
+            LLMQType::LlmqtypeUnknown => 0,
             LLMQType::Llmqtype50_60 => 1,
             LLMQType::Llmqtype400_60 => 2,
             LLMQType::Llmqtype400_85 => 3,
@@ -127,6 +134,7 @@ impl Into<u8> for LLMQType {
             LLMQType::LlmqtypeTestV17 => 102,
             LLMQType::LlmqtypeTestDIP0024 => 103,
             LLMQType::LlmqtypeDevnetDIP0024 => 105,
+            LLMQType::LlmqtypeDevnet333DIP0024 => 106,
         }
     }
 }

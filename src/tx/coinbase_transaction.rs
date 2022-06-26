@@ -7,7 +7,7 @@ use dash_spv_primitives::hashes::{Hash, sha256d};
 use crate::tx::TransactionType::Coinbase;
 use crate::tx::Transaction;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct CoinbaseTransaction {
     pub base: Transaction,
     pub coinbase_transaction_version: u16,

@@ -4,6 +4,7 @@ use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, VarBytes};
 use dash_spv_primitives::hashes::{Hash, sha256d};
+use dash_spv_primitives::hashes::hex::ToHex;
 
 // block height indicating transaction is unconfirmed
 pub const TX_UNCONFIRMED: i32 = i32::MAX;
@@ -60,13 +61,25 @@ impl TransactionType {
     pub fn requires_inputs(&self) -> bool { true }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TransactionInput {
     pub input_hash: UInt256,
     pub index: u32,
     pub script: Option<Vec<u8>>,
     pub signature: Option<Vec<u8>>,
     pub sequence: u32,
+}
+
+impl std::fmt::Debug for TransactionInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TransactionInput")
+            .field("input_hash", &self.input_hash)
+            .field("index", &self.index)
+            .field("script", &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .field("signature", &self.signature.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .field("sequence", &self.sequence)
+            .finish()
+    }
 }
 
 impl<'a> TryRead<'a, Endian> for TransactionInput {
@@ -90,11 +103,21 @@ impl<'a> TryRead<'a, Endian> for TransactionInput {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct TransactionOutput {
     pub amount: u64,
     pub script: Option<Vec<u8>>,
     pub address: Option<Vec<u8>>,
+}
+
+impl std::fmt::Debug for TransactionOutput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TransactionOutput")
+            .field("amount", &self.amount)
+            .field("script", &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .field("address", &self.address.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .finish()
+    }
 }
 
 impl<'a> TryRead<'a, Endian> for TransactionOutput {
@@ -117,7 +140,7 @@ pub trait ITransaction {
     fn transaction_type(&self) -> TransactionType;
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transaction {
     pub inputs: Vec<TransactionInput>,
     pub outputs: Vec<TransactionOutput>,

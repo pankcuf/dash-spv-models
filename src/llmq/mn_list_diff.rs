@@ -5,34 +5,49 @@ use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::byte_util::{BytesDecodable, Reversable};
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::crypto::var_bytes::VarBytes;
+use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 use crate::masternode::{LLMQEntry, MasternodeEntry};
 use crate::tx::CoinbaseTransaction;
 
-#[derive(Debug)]
+#[derive(Clone)]
 pub struct MNListDiff<'a> {
     pub base_block_hash: UInt256,
     pub block_hash: UInt256,
     pub total_transactions: u32,
-
     pub merkle_hashes: &'a [u8],
     pub merkle_hashes_count: usize,
-
     pub merkle_flags: &'a [u8],
     pub merkle_flags_count: usize,
-
     pub coinbase_transaction: CoinbaseTransaction,
-
     pub deleted_masternode_hashes: Vec<UInt256>,
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
-
     pub deleted_quorums: BTreeMap<LLMQType, Vec<UInt256>>,
     pub added_quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
-
     pub length: usize,
     pub block_height: u32,
 }
 
+impl<'a> std::fmt::Debug for MNListDiff<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MNListDiff")
+            .field("base_block_hash", &self.base_block_hash)
+            .field("block_hash", &self.block_hash)
+            .field("total_transactions", &self.total_transactions)
+            .field("merkle_hashes", &self.merkle_hashes.to_hex())
+            .field("merkle_hashes_count", &self.merkle_hashes_count)
+            .field("merkle_flags", &self.merkle_flags.to_hex())
+            .field("merkle_flags_count", &self.merkle_flags_count)
+            .field("coinbase_transaction", &self.coinbase_transaction)
+            .field("deleted_masternode_hashes", &self.deleted_masternode_hashes)
+            .field("added_or_modified_masternodes", &self.added_or_modified_masternodes)
+            .field("deleted_quorums", &self.deleted_quorums)
+            .field("added_quorums", &self.added_quorums)
+            .field("length", &self.length)
+            .field("block_height", &self.block_height)
+            .finish()
+    }
+}
 
 impl<'a> MNListDiff<'a> {
     pub fn new<F: Fn(UInt256) -> u32>(message: &'a [u8], offset: &mut usize, block_height_lookup: F) -> Option<Self> {
