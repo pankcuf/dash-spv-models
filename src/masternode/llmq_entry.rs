@@ -105,6 +105,39 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
 
 impl LLMQEntry {
 
+    pub fn new(version: u16, llmq_type: LLMQType, llmq_hash: UInt256, index: Option<u16>,
+               signers_count: VarInt, valid_members_count: VarInt,
+               signers_bitset: Vec<u8>, valid_members_bitset: Vec<u8>,
+               public_key: UInt384, verification_vector_hash: UInt256,
+               threshold_signature: UInt768, all_commitment_aggregated_signature: UInt768
+    ) -> Self {
+        let q_data = Self::generate_data(
+            version, llmq_type, llmq_hash,
+            signers_count.clone(), signers_bitset.as_slice(),
+            valid_members_count.clone(), valid_members_bitset.as_slice(),
+            public_key, verification_vector_hash, threshold_signature,
+            all_commitment_aggregated_signature);
+        let entry_hash = UInt256(sha256d::Hash::hash(q_data.as_slice()).into_inner());
+        Self {
+            version,
+            llmq_hash,
+            index,
+            public_key,
+            threshold_signature,
+            verification_vector_hash,
+            all_commitment_aggregated_signature,
+            llmq_type,
+            signers_bitset,
+            signers_count,
+            valid_members_bitset,
+            valid_members_count,
+            entry_hash,
+            verified: false,
+            saved: false,
+            commitment_hash: None
+        }
+    }
+
     pub fn generate_data(
         version: u16,
         llmq_type: LLMQType,
