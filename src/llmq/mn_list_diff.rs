@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
-use byte::BytesExt;
-use byte::ctx::Bytes;
 use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::byte_util::{BytesDecodable, Reversable};
 use dash_spv_primitives::crypto::UInt256;
+use dash_spv_primitives::crypto::var_array::VarArray;
 use dash_spv_primitives::crypto::var_bytes::VarBytes;
 use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
@@ -15,8 +14,7 @@ pub struct MNListDiff<'a> {
     pub base_block_hash: UInt256,
     pub block_hash: UInt256,
     pub total_transactions: u32,
-    pub merkle_hashes: &'a [u8],
-    pub merkle_hashes_count: usize,
+    pub merkle_hashes: VarArray<UInt256>,
     pub merkle_flags: &'a [u8],
     pub merkle_flags_count: usize,
     pub coinbase_transaction: CoinbaseTransaction,
@@ -24,7 +22,6 @@ pub struct MNListDiff<'a> {
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
     pub deleted_quorums: BTreeMap<LLMQType, Vec<UInt256>>,
     pub added_quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
-    pub length: usize,
     pub block_height: u32,
 }
 
@@ -34,8 +31,7 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
             .field("base_block_hash", &self.base_block_hash)
             .field("block_hash", &self.block_hash)
             .field("total_transactions", &self.total_transactions)
-            .field("merkle_hashes", &self.merkle_hashes.to_hex())
-            .field("merkle_hashes_count", &self.merkle_hashes_count)
+            .field("merkle_hashes", &self.merkle_hashes)
             .field("merkle_flags", &self.merkle_flags.to_hex())
             .field("merkle_flags_count", &self.merkle_flags_count)
             .field("coinbase_transaction", &self.coinbase_transaction)
@@ -43,7 +39,6 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
             .field("added_or_modified_masternodes", &self.added_or_modified_masternodes)
             .field("deleted_quorums", &self.deleted_quorums)
             .field("added_quorums", &self.added_quorums)
-            .field("length", &self.length)
             .field("block_height", &self.block_height)
             .finish()
     }
@@ -55,11 +50,7 @@ impl<'a> MNListDiff<'a> {
         let block_hash = UInt256::from_bytes(message, offset)?;
         let block_height= block_height_lookup(block_hash);
         let total_transactions = u32::from_bytes(message, offset)?;
-        let merkle_hashes_count = 32 * VarInt::from_bytes(message, offset)?.0 as usize;
-        let merkle_hashes = match message.read_with(offset, Bytes::Len(merkle_hashes_count)) {
-            Ok(data) => data,
-            Err(_err) => { return None; }
-        };
+        let merkle_hashes = VarArray::<UInt256>::from_bytes(message, offset)?;
         let merkle_flags_var_bytes = VarBytes::from_bytes(message, offset)?;
         let coinbase_transaction = CoinbaseTransaction::from_bytes(message, offset)?;
         let deleted_masternode_count = VarInt::from_bytes(message, offset)?.0;
@@ -110,7 +101,6 @@ impl<'a> MNListDiff<'a> {
             block_hash,
             total_transactions,
             merkle_hashes,
-            merkle_hashes_count,
             merkle_flags: merkle_flags_var_bytes.1,
             merkle_flags_count: merkle_flags_var_bytes.0.0 as usize,
             coinbase_transaction,
@@ -118,7 +108,6 @@ impl<'a> MNListDiff<'a> {
             added_or_modified_masternodes,
             deleted_quorums,
             added_quorums,
-            length: *offset,
             block_height
         })
     }

@@ -1,5 +1,4 @@
 use dash_spv_primitives::consensus::Encodable;
-use dash_spv_primitives::crypto::byte_util::BytesDecodable;
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{Hash, sha256d};
 
@@ -19,7 +18,7 @@ fn ceil_log2(mut x: i32) -> i32 {
 #[derive(Clone, Debug)]
 pub struct MerkleTree<'a> {
     pub tree_element_count: u32,
-    pub hashes: &'a [u8],
+    pub hashes: Vec<UInt256>,
     pub flags: &'a [u8],
 }
 
@@ -67,10 +66,9 @@ impl<'a> MerkleTree<'a> {
         let flag = self.flags[(*flag_idx / 8) as usize] & (1 << (*flag_idx % 8)) != 0;
         *flag_idx += 1;
         if !flag || depth == ceil_log2(self.tree_element_count as i32) {
-            let off = &mut (32*(*hash_idx) as usize);
-            let hash = UInt256::from_bytes(self.hashes, off)?;
+            let hash = self.hashes.get(*hash_idx as usize).copied();
             *hash_idx += 1;
-            return leaf(Some(hash), flag);
+            return leaf(hash, flag);
         }
         let left = self.walk_hash_idx(hash_idx, flag_idx, depth + 1, leaf, branch);
         let right = self.walk_hash_idx(hash_idx, flag_idx, depth + 1, leaf, branch);

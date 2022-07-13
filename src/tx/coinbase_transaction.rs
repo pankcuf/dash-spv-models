@@ -1,4 +1,4 @@
-use byte::{BytesExt, LE, TryRead};
+use byte::{BytesExt, TryRead};
 use byte::ctx::Endian;
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::consensus::encode::VarInt;
@@ -73,18 +73,11 @@ impl CoinbaseTransaction {
         buffer
     }
 
-    pub fn has_found_coinbase(&self, hashes: &[u8]) -> bool {
+    pub fn has_found_coinbase(&self, hashes: &Vec<UInt256>) -> bool {
         if let Some(coinbase_hash) = self.base.tx_hash {
-            let offset = &mut 0;
-            for _i in 0..hashes.len() {
-                if let Ok(h) = hashes.read_with::<UInt256>(offset, LE) {
-                    println!("finding coinbase: {:?} == {:?}", coinbase_hash, h);
-                    if h == coinbase_hash {
-                        return true;
-                    }
-                }
-            }
+            hashes.iter().filter(|&h| coinbase_hash.cmp(h).is_eq()).count() > 0
+        } else {
+            false
         }
-        false
     }
 }
