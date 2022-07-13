@@ -1,7 +1,9 @@
 use byte::ctx::{Bytes, Endian};
 use byte::{BytesExt, LE, TryRead};
 use dash_spv_primitives::consensus::encode::VarInt;
+use dash_spv_primitives::crypto::byte_util::BytesDecodable;
 use dash_spv_primitives::hashes::hex::ToHex;
+use dash_spv_primitives::impl_bytes_decodable;
 use crate::common::LLMQSnapshotSkipMode;
 
 #[derive(Clone)]
@@ -14,6 +16,16 @@ pub struct LLMQSnapshot {
     //  Mode of the skip list
     pub skip_list_mode: LLMQSnapshotSkipMode,
 }
+impl Default for LLMQSnapshot {
+    fn default() -> Self {
+        Self {
+            member_list: vec![],
+            skip_list: vec![],
+            skip_list_mode: LLMQSnapshotSkipMode::NoSkipping
+        }
+    }
+}
+
 impl<'a> std::fmt::Debug for LLMQSnapshot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LLMQSnapshot")
@@ -26,12 +38,12 @@ impl<'a> std::fmt::Debug for LLMQSnapshot {
 impl<'a> TryRead<'a, Endian> for LLMQSnapshot {
     fn try_read(bytes: &'a [u8], _endian: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
-        let member_list_size = bytes.read_with::<VarInt>(offset, LE)?.0 as usize;
-        let member_list: &[u8] = bytes.read_with(offset, Bytes::Len((member_list_size + 7) / 8))?;
         let skip_list_mode = bytes.read_with::<LLMQSnapshotSkipMode>(offset, LE)?;
-        let skip_list_size = bytes.read_with::<u16>(offset, LE)? as usize;
-        let mut skip_list = Vec::with_capacity(skip_list_size);
-        for _i in 0..skip_list_size {
+        let member_list_length = bytes.read_with::<VarInt>(offset, LE)?.0 as usize;
+        let member_list: &[u8] = bytes.read_with(offset, Bytes::Len((member_list_length + 7) / 8))?;
+        let skip_list_length = bytes.read_with::<VarInt>(offset, LE)?.0 as usize;
+        let mut skip_list = Vec::with_capacity(skip_list_length);
+        for _i in 0..skip_list_length {
             skip_list.push(bytes.read_with::<u32>(offset, LE)?);
         }
         Ok((Self { member_list: member_list.to_vec(), skip_list, skip_list_mode }, *offset))
@@ -43,3 +55,4 @@ impl LLMQSnapshot {
         self.member_list.len() + 1 + 2 + self.skip_list.len() * 2
     }
 }
+impl_bytes_decodable!(LLMQSnapshot);
