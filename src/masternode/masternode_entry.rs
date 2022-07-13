@@ -29,18 +29,18 @@ impl std::fmt::Debug for MasternodeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MasternodeEntry")
             .field("provider_registration_transaction_hash", &self.provider_registration_transaction_hash)
-            .field("confirmed_hash", &self.confirmed_hash)
-            .field("confirmed_hash_hashed_with_provider_registration_transaction_hash", &self.confirmed_hash_hashed_with_provider_registration_transaction_hash)
-            .field("socket_address", &self.socket_address)
-            .field("operator_public_key", &self.operator_public_key)
-            .field("previous_operator_public_keys", &self.previous_operator_public_keys)
-            .field("previous_entry_hashes", &self.previous_entry_hashes)
-            .field("previous_validity", &self.previous_validity)
-            .field("known_confirmed_at_height", &self.known_confirmed_at_height)
-            .field("update_height", &self.update_height)
-            .field("key_id_voting", &self.key_id_voting)
-            .field("is_valid", &self.is_valid)
-            .field("entry_hash", &self.entry_hash)
+            // .field("confirmed_hash", &self.confirmed_hash)
+            // .field("confirmed_hash_hashed_with_provider_registration_transaction_hash", &self.confirmed_hash_hashed_with_provider_registration_transaction_hash)
+            // .field("socket_address", &self.socket_address)
+            // .field("operator_public_key", &self.operator_public_key)
+            // .field("previous_operator_public_keys", &self.previous_operator_public_keys)
+            // .field("previous_entry_hashes", &self.previous_entry_hashes)
+            // .field("previous_validity", &self.previous_validity)
+            // .field("known_confirmed_at_height", &self.known_confirmed_at_height)
+            // .field("update_height", &self.update_height)
+            // .field("key_id_voting", &self.key_id_voting)
+            // .field("is_valid", &self.is_valid)
+            // .field("entry_hash", &self.entry_hash)
             .finish()
     }
 }
@@ -82,6 +82,40 @@ impl<'a> TryRead<'a, Endian> for MasternodeEntry {
 }
 
 impl MasternodeEntry {
+
+    pub fn new(
+        provider_registration_transaction_hash: UInt256,
+        confirmed_hash: UInt256,
+        socket_address: SocketAddress,
+        key_id_voting: UInt160,
+        operator_public_key: UInt384,
+        is_valid: u8) -> Self {
+        let entry_hash = MasternodeEntry::calculate_entry_hash(
+            provider_registration_transaction_hash,
+            confirmed_hash,
+            socket_address,
+            operator_public_key,
+            key_id_voting,
+            is_valid
+        );
+        let mut entry = Self {
+            provider_registration_transaction_hash,
+            confirmed_hash,
+            confirmed_hash_hashed_with_provider_registration_transaction_hash: None,
+            socket_address,
+            operator_public_key,
+            previous_operator_public_keys: Default::default(),
+            previous_entry_hashes: Default::default(),
+            previous_validity: Default::default(),
+            known_confirmed_at_height: None,
+            update_height: 0,
+            key_id_voting,
+            is_valid: is_valid != 0,
+            entry_hash
+        };
+        entry.update_confirmed_hash_hashed_with_provider_registration_transaction_hash();
+        entry
+    }
 
     fn calculate_entry_hash(
         provider_registration_transaction_hash: UInt256,
