@@ -18,6 +18,19 @@ pub struct MasternodeList {
     pub quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
 }
 
+impl Default for MasternodeList {
+    fn default() -> Self {
+        Self {
+            block_hash: UInt256::MAX,
+            known_height: 0,
+            masternode_merkle_root: None,
+            llmq_merkle_root: None,
+            masternodes: Default::default(),
+            quorums: Default::default()
+        }
+    }
+}
+
 impl<'a> std::fmt::Debug for MasternodeList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MasternodeList")
