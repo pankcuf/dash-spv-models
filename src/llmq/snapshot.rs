@@ -5,6 +5,7 @@ use dash_spv_primitives::crypto::byte_util::BytesDecodable;
 use dash_spv_primitives::hashes::hex::ToHex;
 use dash_spv_primitives::impl_bytes_decodable;
 use crate::common::LLMQSnapshotSkipMode;
+use crate::masternode::MasternodeEntry;
 
 #[derive(Clone)]
 pub struct LLMQSnapshot {
@@ -54,5 +55,72 @@ impl LLMQSnapshot {
     pub fn length(&self) -> usize {
         self.member_list.len() + 1 + 2 + self.skip_list.len() * 2
     }
+
+    pub fn apply_skip_strategy(&self, sorted_combined_mns_list: Vec<MasternodeEntry>, quorum_num: usize, quarter_size: usize) -> Vec<Vec<MasternodeEntry>> {
+        let mut quarter_quorum_members = Vec::<Vec<MasternodeEntry>>::with_capacity(quorum_num);
+        match self.skip_list_mode {
+            LLMQSnapshotSkipMode::NoSkipping => {
+                let mut iter = sorted_combined_mns_list.iter();
+                (0..quorum_num).for_each(|_i| {
+                    let mut quarter = Vec::<MasternodeEntry>::new();
+                    while quarter.len() < quarter_size {
+                        if let Some(node) = iter.next() {
+                            quarter.push(node.clone());
+                        } else {
+                            iter = sorted_combined_mns_list.iter();
+                        }
+                    }
+                    quarter_quorum_members.push(quarter);
+                });
+            },
+            LLMQSnapshotSkipMode::SkipFirst => {
+                let mut first_entry_index = 0;
+                let mut processed_skip_list = Vec::<u32>::new();
+                self.skip_list.iter().for_each(|s| {
+                    let index = first_entry_index + s;
+                    if first_entry_index == 0 {
+                        first_entry_index = *s;
+                    }
+                    processed_skip_list.push(index)
+                });
+                let mut index: usize = 0;
+                let mut idxk: usize = 0;
+                (0..quorum_num).for_each(|_i| {
+                    let mut quarter = Vec::<MasternodeEntry>::new();
+                    while quarter.len() < quarter_size {
+                        if let Some(_skipped) = processed_skip_list.get(idxk) {
+                            idxk += 1;
+                        } else if let Some(node) = sorted_combined_mns_list.get(index) {
+                            quarter.push(node.clone());
+                            index += 1;
+                            if index == sorted_combined_mns_list.len() {
+                                index = 0;
+                            }
+                        }
+                    }
+                    quarter_quorum_members.push(quarter);
+                });
+            },
+            LLMQSnapshotSkipMode::SkipExcept => {
+                (0..quorum_num).for_each(|_i| {
+                    let mut quarter = Vec::<MasternodeEntry>::new();
+                    self.skip_list.iter().for_each(|unskipped| {
+                        if let Some(node) = sorted_combined_mns_list.get(*unskipped as usize) {
+                            if quarter.len() < quarter_size {
+                                quarter.push(node.clone());
+                            }
+                        }
+                    });
+                    quarter_quorum_members.push(quarter);
+                });
+            },
+            LLMQSnapshotSkipMode::SkipAll => {
+                // TODO: do we need to impl smth in this strategy ?
+            },
+
+        }
+        quarter_quorum_members
+    }
+
 }
 impl_bytes_decodable!(LLMQSnapshot);
