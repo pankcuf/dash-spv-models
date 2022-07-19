@@ -35,21 +35,21 @@ impl std::fmt::Debug for LLMQEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LLMQEntry")
             .field("version", &self.version)
-            .field("llmq_hash", &self.llmq_hash)
-            .field("index", &self.index)
-            .field("public_key", &self.public_key)
-            .field("threshold_signature", &self.threshold_signature)
-            .field("verification_vector_hash", &self.verification_vector_hash)
-            .field("all_commitment_aggregated_signature", &self.all_commitment_aggregated_signature)
+            // .field("llmq_hash", &self.llmq_hash)
+            .field("index", &self.index.unwrap_or(0))
+            // .field("public_key", &self.public_key)
+            // .field("threshold_signature", &self.threshold_signature)
+            // .field("verification_vector_hash", &self.verification_vector_hash)
+            // .field("all_commitment_aggregated_signature", &self.all_commitment_aggregated_signature)
             .field("llmq_type", &self.llmq_type)
-            .field("signers_bitset", &self.signers_bitset.to_hex())
-            .field("signers_bitset_length", &self.signers_bitset.len())
-            .field("signers_count", &self.signers_count)
-            .field("valid_members_bitset", &self.valid_members_bitset.to_hex())
-            .field("valid_members_bitset_length", &self.valid_members_bitset.len())
-            .field("valid_members_count", &self.valid_members_count)
+            // .field("signers_bitset", &self.signers_bitset.to_hex())
+            // .field("signers_bitset_length", &self.signers_bitset.len())
+            // .field("signers_count", &self.signers_count)
+            // .field("valid_members_bitset", &self.valid_members_bitset.to_hex())
+            // .field("valid_members_bitset_length", &self.valid_members_bitset.len())
+            // .field("valid_members_count", &self.valid_members_count)
             .field("entry_hash", &self.entry_hash)
-            .field("commitment_hash", &self.commitment_hash)
+            // .field("commitment_hash", &self.commitment_hash)
             .finish()
     }
 }
@@ -76,7 +76,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
         let threshold_signature = bytes.read_with::<UInt768>(offset, LE)?;
         let all_commitment_aggregated_signature = bytes.read_with::<UInt768>(offset, LE)?;
         let q_data = Self::generate_data(
-            version, llmq_type, llmq_hash,
+            version, llmq_type, llmq_hash, index,
             signers_count.clone(), signers_bitset,
             valid_members_count.clone(), valid_members_bitset,
             public_key, verification_vector_hash, threshold_signature,
@@ -112,7 +112,7 @@ impl LLMQEntry {
                threshold_signature: UInt768, all_commitment_aggregated_signature: UInt768
     ) -> Self {
         let q_data = Self::generate_data(
-            version, llmq_type, llmq_hash,
+            version, llmq_type, llmq_hash, index,
             signers_count.clone(), signers_bitset.as_slice(),
             valid_members_count.clone(), valid_members_bitset.as_slice(),
             public_key, verification_vector_hash, threshold_signature,
@@ -142,6 +142,7 @@ impl LLMQEntry {
         version: u16,
         llmq_type: LLMQType,
         llmq_hash: UInt256,
+        llmq_index: Option<u16>,
         signers_count: VarInt,
         signers_bitset: &[u8],
         valid_members_count: VarInt,
@@ -157,6 +158,9 @@ impl LLMQEntry {
         *offset += version.consensus_encode(&mut buffer).unwrap();
         *offset += llmq_u8.consensus_encode(&mut buffer).unwrap();
         *offset += llmq_hash.consensus_encode(&mut buffer).unwrap();
+        if let Some(index) = llmq_index {
+            *offset += index.consensus_encode(&mut buffer).unwrap();
+        }
         *offset += signers_count.consensus_encode(&mut buffer).unwrap();
         buffer.emit_slice(&signers_bitset).unwrap();
         *offset += signers_bitset.len();
@@ -172,7 +176,7 @@ impl LLMQEntry {
 
     pub fn to_data(&self) -> Vec<u8> {
         Self::generate_data(
-            self.version, self.llmq_type, self.llmq_hash,
+            self.version, self.llmq_type, self.llmq_hash, self.index,
             self.signers_count, &self.signers_bitset,
             self.valid_members_count, &self.valid_members_bitset,
             self.public_key, self.verification_vector_hash,
