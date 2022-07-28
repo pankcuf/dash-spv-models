@@ -24,10 +24,12 @@ pub struct MerkleTree<'a> {
 
 impl<'a> MerkleTree<'a> {
     pub fn has_root(&self, desired_merkle_root: UInt256) -> bool {
+        println!("MerkleTree.has_root: {}", desired_merkle_root);
         if self.tree_element_count == 0 {
             return true;
         }
         if let Some(root) = self.merkle_root() {
+            println!("MerkleTree finding root....: {} == {}", root, desired_merkle_root);
             if root == desired_merkle_root {
                 return true;
             }
