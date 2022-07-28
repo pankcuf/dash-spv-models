@@ -62,12 +62,10 @@ impl MasternodeList {
         };
         println!("MasternodeList: {}: {}", block_height, block_hash.clone().reversed());
         if let Some(hashes) = list.hashes_for_merkle_root(block_height) {
-            println!("hashes_for_merkle_root: (masternodes): {:#?}", hashes.clone().iter_mut().map(|h| h.reversed()).collect::<Vec<UInt256>>());
             list.masternode_merkle_root = merkle_root_from_hashes(hashes);
         }
         if quorums_active {
             let hashes = list.hashes_for_quorum_merkle_root();
-            println!("hashes_for_merkle_root: (quorums): {:#?}", hashes.clone().iter_mut().map(|h| h.reversed()).collect::<Vec<UInt256>>());
             list.llmq_merkle_root = merkle_root_from_hashes(hashes);
         }
         list

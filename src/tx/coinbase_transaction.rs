@@ -74,7 +74,6 @@ impl CoinbaseTransaction {
     }
 
     pub fn has_found_coinbase(&mut self, hashes: &Vec<UInt256>) -> bool {
-        println!("has_found_coinbase: {:?} in [{:#?}]", self.base.tx_hash, hashes);
         if let Some(coinbase_hash) = self.base.tx_hash {
             self.has_found_coinbase_internal(coinbase_hash, hashes)
         } else {
