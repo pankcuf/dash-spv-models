@@ -61,7 +61,7 @@ impl<'a> MerkleTree<'a> {
         &self, hash_idx: &mut i32, flag_idx: &mut i32,
         depth: i32, leaf: LL, branch: BL) -> Option<UInt256> {
         let flags_length = self.flags.len() as i32;
-        let hashes_length = self.hashes.len() as i32;
+        let hashes_length = 32*self.hashes.len() as i32;
         if *flag_idx / 8 >= flags_length || (*hash_idx + 1) * 32 > hashes_length {
             return leaf(None, false);
         }
