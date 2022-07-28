@@ -74,6 +74,7 @@ impl CoinbaseTransaction {
     }
 
     pub fn has_found_coinbase(&self, hashes: &Vec<UInt256>) -> bool {
+        println!("has_found_coinbase: {:?} in [{:#?}]", self.base.tx_hash, hashes);
         if let Some(coinbase_hash) = self.base.tx_hash {
             hashes.iter().filter(|&h| coinbase_hash.cmp(h).is_eq()).count() > 0
         } else {
