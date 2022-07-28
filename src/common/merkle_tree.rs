@@ -56,17 +56,17 @@ impl<'a> MerkleTree<'a> {
     pub fn walk_hash_idx<
         BL: Fn(UInt256, Option<UInt256>) -> Option<UInt256> + Copy,
         LL: Fn(Option<UInt256>, bool) -> Option<UInt256> + Copy>(
-        &self, hash_idx: &mut i32, flag_idx: &mut i32,
+        &self, hash_idx: &mut usize, flag_idx: &mut usize,
         depth: i32, leaf: LL, branch: BL) -> Option<UInt256> {
-        let flags_length = self.flags.len() as i32;
-        let hashes_length = self.hashes.len() as i32;
+        let flags_length = self.flags.len();
+        let hashes_length = self.hashes.len();
         if *flag_idx / 8 >= flags_length || *hash_idx >= hashes_length {
             return leaf(None, false);
         }
-        let flag = self.flags[(*flag_idx / 8) as usize] & (1 << (*flag_idx % 8)) != 0;
+        let flag = self.flags[*flag_idx / 8] & (1 << (*flag_idx % 8)) != 0;
         *flag_idx += 1;
         if !flag || depth == ceil_log2(self.tree_element_count as i32) {
-            let hash = self.hashes.get(*hash_idx as usize).copied();
+            let hash = self.hashes.get(*hash_idx).copied();
             *hash_idx += 1;
             return leaf(hash, flag);
         }
