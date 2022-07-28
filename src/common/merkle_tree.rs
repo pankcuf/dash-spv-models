@@ -24,7 +24,7 @@ pub struct MerkleTree<'a> {
 
 impl<'a> MerkleTree<'a> {
     pub fn has_root(&self, desired_merkle_root: UInt256) -> bool {
-        println!("MerkleTree.has_root: {}", desired_merkle_root);
+        println!("MerkleTree.has_root: {} tree: [ {}, {:?}, {:?} ]", desired_merkle_root, self.tree_element_count, self.hashes, self.flags);
         if self.tree_element_count == 0 {
             return true;
         }
@@ -69,6 +69,7 @@ impl<'a> MerkleTree<'a> {
         *flag_idx += 1;
         if !flag || depth == ceil_log2(self.tree_element_count as i32) {
             let hash = self.hashes.get(*hash_idx as usize).copied();
+            println!("MerkleTree walk_hash_idx....: {:?}", hash);
             *hash_idx += 1;
             return leaf(hash, flag);
         }
