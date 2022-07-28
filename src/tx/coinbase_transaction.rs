@@ -73,12 +73,18 @@ impl CoinbaseTransaction {
         buffer
     }
 
-    pub fn has_found_coinbase(&self, hashes: &Vec<UInt256>) -> bool {
+    pub fn has_found_coinbase(&mut self, hashes: &Vec<UInt256>) -> bool {
         println!("has_found_coinbase: {:?} in [{:#?}]", self.base.tx_hash, hashes);
         if let Some(coinbase_hash) = self.base.tx_hash {
-            hashes.iter().filter(|&h| coinbase_hash.cmp(h).is_eq()).count() > 0
+            self.has_found_coinbase_internal(coinbase_hash, hashes)
         } else {
-            false
+            let coinbase_hash = UInt256(sha256d::Hash::hash(&self.to_data()).into_inner());
+            self.base.tx_hash = Some(coinbase_hash);
+            self.has_found_coinbase_internal(coinbase_hash, hashes)
         }
+    }
+
+    fn has_found_coinbase_internal(&self, coinbase_hash:UInt256, hashes: &Vec<UInt256>) -> bool {
+        hashes.iter().filter(|&h| coinbase_hash.cmp(h).is_eq()).count() > 0
     }
 }
