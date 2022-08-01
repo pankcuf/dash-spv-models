@@ -49,6 +49,7 @@ impl std::fmt::Debug for LLMQEntry {
             // .field("valid_members_bitset_length", &self.valid_members_bitset.len())
             // .field("valid_members_count", &self.valid_members_count)
             .field("entry_hash", &self.entry_hash)
+            .field("verified", &self.verified)
             // .field("commitment_hash", &self.commitment_hash)
             .finish()
     }
