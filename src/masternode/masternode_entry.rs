@@ -55,29 +55,14 @@ impl<'a> TryRead<'a, Endian> for MasternodeEntry {
         let operator_public_key = bytes.read_with::<UInt384>(offset, byte::LE)?;
         let key_id_voting = bytes.read_with::<UInt160>(offset, byte::LE)?;
         let is_valid = bytes.read_with::<u8>(offset, byte::LE).unwrap_or(0);
-        let entry_hash = MasternodeEntry::calculate_entry_hash(
+        Ok((Self::new(
             provider_registration_transaction_hash,
             confirmed_hash,
             socket_address,
-            operator_public_key,
             key_id_voting,
-            is_valid
-        );
-        Ok((Self {
-            provider_registration_transaction_hash,
-            confirmed_hash,
-            confirmed_hash_hashed_with_provider_registration_transaction_hash: None,
-            socket_address,
             operator_public_key,
-            previous_operator_public_keys: BTreeMap::new(),
-            previous_entry_hashes: BTreeMap::new(),
-            previous_validity: BTreeMap::new(),
-            known_confirmed_at_height: None,
-            update_height: 0,
-            key_id_voting,
-            is_valid: is_valid != 0,
-            entry_hash
-        }, *offset))
+            is_valid),
+            *offset))
     }
 }
 
@@ -98,10 +83,10 @@ impl MasternodeEntry {
             key_id_voting,
             is_valid
         );
-        let mut entry = Self {
+        Self {
             provider_registration_transaction_hash,
             confirmed_hash,
-            confirmed_hash_hashed_with_provider_registration_transaction_hash: None,
+            confirmed_hash_hashed_with_provider_registration_transaction_hash: Some(Self::hash_confirmed_hash(confirmed_hash, provider_registration_transaction_hash)),
             socket_address,
             operator_public_key,
             previous_operator_public_keys: Default::default(),
@@ -112,9 +97,7 @@ impl MasternodeEntry {
             key_id_voting,
             is_valid: is_valid != 0,
             entry_hash
-        };
-        entry.update_confirmed_hash_hashed_with_provider_registration_transaction_hash();
-        entry
+        }
     }
 
     fn calculate_entry_hash(
@@ -158,8 +141,7 @@ impl MasternodeEntry {
     }
 
     pub fn confirmed_hash_hashed_with_provider_registration_transaction_hash_at(&self, block_height: u32) -> Option<UInt256> {
-        if self.known_confirmed_at_height.is_none() ||
-            self.known_confirmed_at_height? <= block_height {
+        if self.known_confirmed_at_height.is_none() || self.known_confirmed_at_height? <= block_height {
             self.confirmed_hash_hashed_with_provider_registration_transaction_hash
         } else {
             Some(Self::hash_confirmed_hash(UInt256::default(), self.provider_registration_transaction_hash))
