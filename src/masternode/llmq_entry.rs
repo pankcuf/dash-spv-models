@@ -5,7 +5,6 @@ use dash_spv_primitives::consensus::{Encodable, WriteExt};
 use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
-use dash_spv_primitives::hashes::hex::ToHex;
 use dash_spv_primitives::hashes::{Hash, sha256d};
 use crate::common::LLMQType;
 
