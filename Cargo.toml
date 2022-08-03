@@ -1,6 +1,6 @@
 [package]
 name = "dash-spv-models"
-version = "0.1.17"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
@@ -9,11 +9,10 @@ byte = "0.2"
 #[dependencies.dash-spv-primitives]
 #path = "../dash-spv-primitives"
 
-
 [dependencies.dash-spv-primitives]
 git = "https://github.com/pankcuf/dash-spv-primitives"
 branch = "master"
-version = "0.1.13"
+version = "0.2.1"
 
 [lib]
 name = "dash_spv_models"
