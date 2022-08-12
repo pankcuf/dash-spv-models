@@ -37,7 +37,7 @@ impl std::fmt::Debug for MasternodeEntry {
             // .field("previous_entry_hashes", &self.previous_entry_hashes)
             // .field("previous_validity", &self.previous_validity)
             // .field("known_confirmed_at_height", &self.known_confirmed_at_height)
-            // .field("update_height", &self.update_height)
+            .field("update_height", &self.update_height)
             // .field("key_id_voting", &self.key_id_voting)
             // .field("is_valid", &self.is_valid)
             // .field("entry_hash", &self.entry_hash)
@@ -270,6 +270,7 @@ impl MasternodeEntry {
     }
 
     pub fn update_with_block_height(&mut self, block_height: u32) {
+        println!("update_with_block_height: {} {}", self.provider_registration_transaction_hash, block_height);
         self.update_height = block_height;
         if !self.confirmed_hash.is_zero() && block_height != u32::MAX {
             self.known_confirmed_at_height = Some(block_height);
