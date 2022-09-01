@@ -34,7 +34,7 @@ impl std::fmt::Debug for MasternodeEntry {
             // .field("socket_address", &self.socket_address)
             // .field("operator_public_key", &self.operator_public_key)
             // .field("previous_operator_public_keys", &self.previous_operator_public_keys)
-            // .field("previous_entry_hashes", &self.previous_entry_hashes)
+            .field("previous_entry_hashes", &self.previous_entry_hashes)
             // .field("previous_validity", &self.previous_validity)
             // .field("known_confirmed_at_height", &self.known_confirmed_at_height)
             .field("update_height", &self.update_height)
