@@ -6,7 +6,6 @@ use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::hashes::{Hash, sha256d};
-use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
@@ -225,34 +224,40 @@ impl LLMQEntry {
         self.commitment_hash.unwrap()
     }
 
+    fn validate_bitset(bitset: Vec<u8>, count: VarInt) -> bool {
+        //println!("validate_bitset: {:?}:{}:{}:{}", bitset.to_hex(), bitset.len(), count, count.0 / 8);
+        if bitset.len() != (count.0 as usize + 7) / 8 {
+            println!("Error: The byte size of the bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", bitset.len(), (count.0 + 7) / 8);
+            return false;
+        }
+        let len = (bitset.len() * 8) as i32;
+        let size = count.0 as i32;
+        if len != size {
+            let rem = len - size;
+            let mask = !(0xff >> rem);
+            let last_byte = match bitset.last() {
+                Some(&last) => last as i32,
+                None => 0
+            };
+            if last_byte & mask != 0 {
+                println!("Error: No out-of-range bits should be set in byte representation of the bitvector");
+                return false;
+            }
+        }
+        true
+    }
+
     pub fn validate_payload(&self) -> bool {
         // The quorumHash must match the current DKG session
         // todo
-        // The byte size of the signers and validMembers bitvectors must match “(quorumSize + 7) / 8”
-        if self.signers_bitset.len() != (self.signers_count.0 as usize + 7) / 8 {
-            println!("Error: The byte size of the signers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})“", self.signers_bitset.len(), (self.signers_count.0 + 7) / 8);
+        let is_valid_signers = Self::validate_bitset(self.signers_bitset.clone(), self.signers_count);
+        if !is_valid_signers {
+            println!("Error: signers_bitset is invalid ({:?} {})", self.signers_bitset, self.signers_count);
             return false;
         }
-        if self.valid_members_bitset.len() != (self.valid_members_count.0 as usize + 7) / 8 {
-            println!("Error: The byte size of the validMembers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.valid_members_bitset.len(), (self.valid_members_count.0 + 7) / 8);
-            return false;
-        }
-        let signers_offset = (self.signers_count.0 / 8) as i32;
-        let mut s_offset = signers_offset.clone() as usize;
-        let signers_last_byte = self.signers_bitset.read_with::<u8>(&mut s_offset, LE).unwrap_or(0) as i32;
-        let signers_mask = 255 >> (((8 - signers_offset) % 32) + 32) % 32 << (((8 - signers_offset) % 32) + 32) % 32;
-        let signers_byte_and_mask = signers_last_byte & signers_mask;
-        if signers_byte_and_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector: {:?} {} {} {} {}", self.signers_bitset.to_hex(), self.signers_count, signers_last_byte, signers_mask, signers_byte_and_mask);
-            return false;
-        }
-        let valid_members_offset = (self.valid_members_count.0 / 8) as i32;
-        let mut v_offset = valid_members_offset.clone() as usize;
-        let valid_members_last_byte = self.valid_members_bitset.read_with::<u8>(&mut v_offset, LE).unwrap_or(0) as i32;
-        let valid_members_mask = 255 >> (((8 - valid_members_offset) % 32) + 32) % 32 << (((8 - valid_members_offset) % 32) + 32) % 32;
-        let valid_members_byte_and_mask = valid_members_last_byte & valid_members_mask;
-        if valid_members_byte_and_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector: {:?} {} {} {} {}", self.valid_members_bitset.to_hex(), self.valid_members_count, valid_members_last_byte, valid_members_mask, valid_members_byte_and_mask);
+        let is_valid_members = Self::validate_bitset(self.valid_members_bitset.clone(), self.valid_members_count);
+        if !is_valid_members {
+            println!("Error: valid_members_bitset is invalid ({:?} {})", self.valid_members_bitset, self.valid_members_count);
             return false;
         }
         let quorum_threshold = self.llmq_type.threshold() as u64;
