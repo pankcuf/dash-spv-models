@@ -262,12 +262,12 @@ impl LLMQEntry {
         }
         let quorum_threshold = self.llmq_type.threshold() as u64;
         // The number of set bits in the signers and validMembers bitvectors must be at least >= quorumThreshold
-        let signers_bitset_true_bits_count = self.signers_bitset.true_bits_count();
+        let signers_bitset_true_bits_count = self.signers_bitset.as_slice().true_bits_count();
         if signers_bitset_true_bits_count < quorum_threshold {
             println!("Error: The number of set bits in the signers bitvector {} must be at least >= quorumThreshold {}", signers_bitset_true_bits_count, quorum_threshold);
             return false;
         }
-        let valid_members_bitset_true_bits_count = self.valid_members_bitset.true_bits_count();
+        let valid_members_bitset_true_bits_count = self.valid_members_bitset.as_slice().true_bits_count();
         if valid_members_bitset_true_bits_count < quorum_threshold {
             println!("Error: The number of set bits in the validMembers bitvector {} must be at least >= quorumThreshold {}", valid_members_bitset_true_bits_count, quorum_threshold);
             return false;
