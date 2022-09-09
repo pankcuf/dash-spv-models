@@ -6,6 +6,7 @@ use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::hashes::{Hash, sha256d};
+use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
@@ -242,7 +243,7 @@ impl LLMQEntry {
         let signers_mask = 255 >> (((8 - signers_offset) % 32) + 32) % 32 << (((8 - signers_offset) % 32) + 32) % 32;
         let signers_byte_and_mask = signers_last_byte & signers_mask;
         if signers_byte_and_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector: {:?} {} {} {} {}", self.signers_bitset, self.signers_count, signers_last_byte, signers_mask, signers_byte_and_mask);
+            println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector: {:?} {} {} {} {}", self.signers_bitset.to_hex(), self.signers_count, signers_last_byte, signers_mask, signers_byte_and_mask);
             return false;
         }
         let valid_members_offset = (self.valid_members_count.0 / 8) as i32;
@@ -251,7 +252,7 @@ impl LLMQEntry {
         let valid_members_mask = 255 >> (((8 - valid_members_offset) % 32) + 32) % 32 << (((8 - valid_members_offset) % 32) + 32) % 32;
         let valid_members_byte_and_mask = valid_members_last_byte & valid_members_mask;
         if valid_members_byte_and_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector: {:?} {} {} {} {}", self.valid_members_bitset, self.valid_members_count, valid_members_last_byte, valid_members_mask, valid_members_byte_and_mask);
+            println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector: {:?} {} {} {} {}", self.valid_members_bitset.to_hex(), self.valid_members_count, valid_members_last_byte, valid_members_mask, valid_members_byte_and_mask);
             return false;
         }
         let quorum_threshold = self.llmq_type.threshold() as u64;
