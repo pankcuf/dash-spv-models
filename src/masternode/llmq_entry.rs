@@ -141,6 +141,7 @@ impl LLMQEntry {
 
     pub fn validate_bitsets(&self) -> bool {
         // The byte size of the signers and validMembers bitvectors must match “(quorumSize + 7) / 8”
+        println!("validate_bitsets: {:?}:{}:{}:{} {:?}:{}:{}:{}",self.signers_bitset, self.signers_bitset.len(), self.signers_count, self.signers_count.0 / 8, self.valid_members_bitset, self.valid_members_bitset.len(), self.valid_members_count, self.valid_members_count.0 / 8);
         if self.signers_bitset.len() != (self.signers_count.0 as usize + 7) / 8 {
             println!("Error: The byte size of the signers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.signers_bitset.len(), (self.signers_count.0 + 7) / 8);
             return false;
