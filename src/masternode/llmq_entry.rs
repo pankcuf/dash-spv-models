@@ -6,7 +6,6 @@ use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::hashes::{Hash, sha256d};
-use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
@@ -140,51 +139,6 @@ impl LLMQEntry {
         }
     }
 
-    pub fn validate_bitsets(&self) -> bool {
-        //validate_bitsets:
-        // [255, 255, 255, 255, 255, 255, 3]
-        // :7:[val: 50, len: 1]:6
-        // [255, 255, 255, 255, 255, 255, 3]
-        // :7:[val: 50, len: 1]:6
-        //added_quorum. validate_bitsets: true
-        //validate_bitsets:
-        // [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        // :50:[val: 400, len: 3]:50
-        // [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-        // :50:[val: 400, len: 3]:50
-
-        // The byte size of the signers and validMembers bitvectors must match “(quorumSize + 7) / 8”
-        println!("validate_bitsets: {:?}:{}:{}:{} {:?}:{}:{}:{}",self.signers_bitset.to_hex(), self.signers_bitset.len(), self.signers_count, self.signers_count.0 / 8, self.valid_members_bitset.to_hex(), self.valid_members_bitset.len(), self.valid_members_count, self.valid_members_count.0 / 8);
-        if self.signers_bitset.len() != (self.signers_count.0 as usize + 7) / 8 {
-            println!("Error: The byte size of the signers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.signers_bitset.len(), (self.signers_count.0 + 7) / 8);
-            return false;
-        }
-        if self.valid_members_bitset.len() != (self.valid_members_count.0 as usize + 7) / 8 {
-            println!("Error: The byte size of the validMembers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.valid_members_bitset.len(), (self.valid_members_count.0 + 7) / 8);
-            return false;
-        }
-
-        // No out-of-range bits should be set in byte representation of the signers and validMembers bitvectors
-        let signers_offset = self.signers_count.0 / 8;
-        let mut s_offset = signers_offset.clone() as usize;
-        let signers_last_byte = self.signers_bitset.read_with::<u8>(&mut s_offset, byte::LE).unwrap();
-        let signers_mask = u8::MAX >> (8 - signers_offset) << (8 - signers_offset);
-        if signers_last_byte & signers_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector");
-            return false;
-        }
-
-        let valid_members_offset = self.valid_members_count.0 / 8;
-        let mut v_offset = valid_members_offset.clone() as usize;
-        let valid_members_last_byte = self.valid_members_bitset.read_with::<u8>(&mut v_offset, byte::LE).unwrap();
-        let valid_members_mask = u8::MAX >> (8 - valid_members_offset) << (8 - valid_members_offset);
-        if valid_members_last_byte & valid_members_mask != 0 {
-            println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector");
-            return false;
-        }
-        return true;
-    }
-
     pub fn generate_data(
         version: u16,
         llmq_type: LLMQType,
@@ -282,24 +236,19 @@ impl LLMQEntry {
             println!("Error: The byte size of the validMembers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.valid_members_bitset.len(), (self.valid_members_count.0 + 7) / 8);
             return false;
         }
-        let signers_offset: usize = (self.signers_count.0 as usize) / 8;
-        let signers_last_byte = match self.signers_bitset.read_with::<u8>(&mut signers_offset.clone(), LE) {
-            Ok(data) => data,
-            Err(_err) => 0
-        };
-        let signers_mask = if signers_offset > 0 && signers_offset <= 8 { u8::MAX >> (8 - signers_offset) << (8 - signers_offset) } else { 0 };
+        let signers_offset = (self.signers_count.0 / 8) as i32;
+        let mut s_offset = signers_offset.clone() as usize;
+        let signers_last_byte = self.signers_bitset.read_with::<u8>(&mut s_offset, LE).unwrap_or(0) as i32;
+        let signers_mask = 255 >> (((8 - signers_offset) % 32) + 32) % 32 << (((8 - signers_offset) % 32) + 32) % 32;
         let signers_byte_and_mask = signers_last_byte & signers_mask;
         if signers_byte_and_mask != 0 {
             println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector");
             return false;
         }
-        let valid_members_offset = (self.valid_members_count.0 as usize) / 8;
-        // thread '<unnamed>' panicked at 'called `Result::unwrap()` on an `Err` value: BadOffset(50)', src/masternode/llmq_entry:216:116
-        let valid_members_last_byte = match self.valid_members_bitset.read_with::<u8>(&mut valid_members_offset.clone(), LE) {
-            Ok(data) => data,
-            Err(_err) => 0
-        };
-        let valid_members_mask = if valid_members_offset > 0 && valid_members_offset <= 8 { u8::MAX >> (8 - valid_members_offset) << (8 - valid_members_offset) } else { 0 };
+        let valid_members_offset = (self.valid_members_count.0 / 8) as i32;
+        let mut v_offset = valid_members_offset.clone() as usize;
+        let valid_members_last_byte = self.valid_members_bitset.read_with::<u8>(&mut v_offset, LE).unwrap_or(0) as i32;
+        let valid_members_mask = 255 >> (((8 - valid_members_offset) % 32) + 32) % 32 << (((8 - valid_members_offset) % 32) + 32) % 32;
         let valid_members_byte_and_mask = valid_members_last_byte & valid_members_mask;
         if valid_members_byte_and_mask != 0 {
             println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector");

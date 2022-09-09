@@ -89,7 +89,6 @@ impl<'a> MNListDiff<'a> {
             let added_quorums_count = VarInt::from_bytes(message, offset)?.0;
             for _i in 0..added_quorums_count {
                 if let Some(entry) = LLMQEntry::from_bytes(message, offset) {
-                    println!("added_quorum. validate_bitsets: {}", entry.validate_bitsets());
                     added_quorums
                         .entry(entry.llmq_type)
                         .or_insert(BTreeMap::new())
