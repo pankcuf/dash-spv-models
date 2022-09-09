@@ -82,6 +82,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
             public_key, verification_vector_hash, threshold_signature,
             all_commitment_aggregated_signature);
         let entry_hash = UInt256(sha256d::Hash::hash(q_data.as_slice()).into_inner());
+
         Ok((LLMQEntry {
             version,
             llmq_hash,
@@ -136,6 +137,38 @@ impl LLMQEntry {
             saved: false,
             commitment_hash: None
         }
+    }
+
+    pub fn validate_bitsets(&self) -> bool {
+        // The byte size of the signers and validMembers bitvectors must match “(quorumSize + 7) / 8”
+        if self.signers_bitset.len() != (self.signers_count.0 as usize + 7) / 8 {
+            println!("Error: The byte size of the signers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.signers_bitset.len(), (self.signers_count.0 + 7) / 8);
+            return false;
+        }
+        if self.valid_members_bitset.len() != (self.valid_members_count.0 as usize + 7) / 8 {
+            println!("Error: The byte size of the validMembers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.valid_members_bitset.len(), (self.valid_members_count.0 + 7) / 8);
+            return false;
+        }
+
+        // No out-of-range bits should be set in byte representation of the signers and validMembers bitvectors
+        let signers_offset = self.signers_count.0 / 8;
+        let mut s_offset = signers_offset.clone() as usize;
+        let signers_last_byte = self.signers_bitset.read_with::<u8>(&mut s_offset, byte::LE).unwrap();
+        let signers_mask = u8::MAX >> (8 - signers_offset) << (8 - signers_offset);
+        if signers_last_byte & signers_mask != 0 {
+            println!("Error: No out-of-range bits should be set in byte representation of the signers bitvector");
+            return false;
+        }
+
+        let valid_members_offset = self.valid_members_count.0 / 8;
+        let mut v_offset = valid_members_offset.clone() as usize;
+        let valid_members_last_byte = self.valid_members_bitset.read_with::<u8>(&mut v_offset, byte::LE).unwrap();
+        let valid_members_mask = u8::MAX >> (8 - valid_members_offset) << (8 - valid_members_offset);
+        if valid_members_last_byte & valid_members_mask != 0 {
+            println!("Error: No out-of-range bits should be set in byte representation of the validMembers bitvector");
+            return false;
+        }
+        return true;
     }
 
     pub fn generate_data(
