@@ -6,6 +6,7 @@ use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::hashes::{Hash, sha256d};
+use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
@@ -140,8 +141,20 @@ impl LLMQEntry {
     }
 
     pub fn validate_bitsets(&self) -> bool {
+        //validate_bitsets:
+        // [255, 255, 255, 255, 255, 255, 3]
+        // :7:[val: 50, len: 1]:6
+        // [255, 255, 255, 255, 255, 255, 3]
+        // :7:[val: 50, len: 1]:6
+        //added_quorum. validate_bitsets: true
+        //validate_bitsets:
+        // [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        // :50:[val: 400, len: 3]:50
+        // [255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        // :50:[val: 400, len: 3]:50
+
         // The byte size of the signers and validMembers bitvectors must match “(quorumSize + 7) / 8”
-        println!("validate_bitsets: {:?}:{}:{}:{} {:?}:{}:{}:{}",self.signers_bitset, self.signers_bitset.len(), self.signers_count, self.signers_count.0 / 8, self.valid_members_bitset, self.valid_members_bitset.len(), self.valid_members_count, self.valid_members_count.0 / 8);
+        println!("validate_bitsets: {:?}:{}:{}:{} {:?}:{}:{}:{}",self.signers_bitset.to_hex(), self.signers_bitset.len(), self.signers_count, self.signers_count.0 / 8, self.valid_members_bitset.to_hex(), self.valid_members_bitset.len(), self.valid_members_count, self.valid_members_count.0 / 8);
         if self.signers_bitset.len() != (self.signers_count.0 as usize + 7) / 8 {
             println!("Error: The byte size of the signers bitvectors ({}) must match “(quorumSize + 7) / 8 ({})", self.signers_bitset.len(), (self.signers_count.0 + 7) / 8);
             return false;
