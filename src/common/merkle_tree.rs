@@ -1,6 +1,6 @@
 use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::UInt256;
-use dash_spv_primitives::hashes::{Hash, sha256d};
+use dash_spv_primitives::hashes::{sha256d, Hash};
 
 #[inline]
 fn ceil_log2(mut x: i32) -> i32 {
@@ -42,22 +42,32 @@ impl<'a> MerkleTree<'a> {
             hash_idx,
             flag_idx,
             0,
-            |hash, _flag | hash,
+            |hash, _flag| hash,
             |left, right| {
                 let mut buffer: Vec<u8> = Vec::with_capacity(64);
                 left.consensus_encode(&mut buffer).unwrap();
-                right.unwrap_or(left.clone()).consensus_encode(&mut buffer).unwrap();
+                right
+                    .unwrap_or(left.clone())
+                    .consensus_encode(&mut buffer)
+                    .unwrap();
                 let hash = sha256d::Hash::hash(&buffer);
                 let value = hash.into_inner();
                 Some(UInt256(value))
-            })
+            },
+        )
     }
 
     pub fn walk_hash_idx<
         BL: Fn(UInt256, Option<UInt256>) -> Option<UInt256> + Copy,
-        LL: Fn(Option<UInt256>, bool) -> Option<UInt256> + Copy>(
-        &self, hash_idx: &mut usize, flag_idx: &mut usize,
-        depth: i32, leaf: LL, branch: BL) -> Option<UInt256> {
+        LL: Fn(Option<UInt256>, bool) -> Option<UInt256> + Copy,
+    >(
+        &self,
+        hash_idx: &mut usize,
+        flag_idx: &mut usize,
+        depth: i32,
+        leaf: LL,
+        branch: BL,
+    ) -> Option<UInt256> {
         let flags_length = self.flags.len();
         let hashes_length = self.hashes.len();
         if *flag_idx / 8 >= flags_length || *hash_idx >= hashes_length {

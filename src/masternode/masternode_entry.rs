@@ -1,13 +1,13 @@
-use std::collections::BTreeMap;
+use crate::common::Block;
+use crate::common::SocketAddress;
 use byte::ctx::Endian;
 use byte::{BytesExt, TryRead};
 use dash_spv_primitives::consensus::Encodable;
-use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::crypto::byte_util::Zeroable;
 use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
-use dash_spv_primitives::hashes::{Hash, sha256, sha256d};
-use crate::common::Block;
-use crate::common::SocketAddress;
+use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
+use dash_spv_primitives::hashes::{sha256, sha256d, Hash};
+use std::collections::BTreeMap;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
@@ -28,7 +28,10 @@ pub struct MasternodeEntry {
 impl std::fmt::Debug for MasternodeEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MasternodeEntry")
-            .field("provider_registration_transaction_hash", &self.provider_registration_transaction_hash)
+            .field(
+                "provider_registration_transaction_hash",
+                &self.provider_registration_transaction_hash,
+            )
             // .field("confirmed_hash", &self.confirmed_hash)
             // .field("confirmed_hash_hashed_with_provider_registration_transaction_hash", &self.confirmed_hash_hashed_with_provider_registration_transaction_hash)
             // .field("socket_address", &self.socket_address)
@@ -47,7 +50,8 @@ impl std::fmt::Debug for MasternodeEntry {
 impl<'a> TryRead<'a, Endian> for MasternodeEntry {
     fn try_read(bytes: &'a [u8], _ctx: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
-        let provider_registration_transaction_hash = bytes.read_with::<UInt256>(offset, byte::LE)?;
+        let provider_registration_transaction_hash =
+            bytes.read_with::<UInt256>(offset, byte::LE)?;
         let confirmed_hash = bytes.read_with::<UInt256>(offset, byte::LE)?;
         let ip_address = bytes.read_with::<UInt128>(offset, byte::LE)?;
         let port = bytes.read_with::<u16>(offset, byte::LE)?.swap_bytes();
@@ -55,38 +59,43 @@ impl<'a> TryRead<'a, Endian> for MasternodeEntry {
         let operator_public_key = bytes.read_with::<UInt384>(offset, byte::LE)?;
         let key_id_voting = bytes.read_with::<UInt160>(offset, byte::LE)?;
         let is_valid = bytes.read_with::<u8>(offset, byte::LE).unwrap_or(0);
-        Ok((Self::new(
-            provider_registration_transaction_hash,
-            confirmed_hash,
-            socket_address,
-            key_id_voting,
-            operator_public_key,
-            is_valid),
-            *offset))
+        Ok((
+            Self::new(
+                provider_registration_transaction_hash,
+                confirmed_hash,
+                socket_address,
+                key_id_voting,
+                operator_public_key,
+                is_valid,
+            ),
+            *offset,
+        ))
     }
 }
 
 impl MasternodeEntry {
-
     pub fn new(
         provider_registration_transaction_hash: UInt256,
         confirmed_hash: UInt256,
         socket_address: SocketAddress,
         key_id_voting: UInt160,
         operator_public_key: UInt384,
-        is_valid: u8) -> Self {
+        is_valid: u8,
+    ) -> Self {
         let entry_hash = MasternodeEntry::calculate_entry_hash(
             provider_registration_transaction_hash,
             confirmed_hash,
             socket_address,
             operator_public_key,
             key_id_voting,
-            is_valid
+            is_valid,
         );
         Self {
             provider_registration_transaction_hash,
             confirmed_hash,
-            confirmed_hash_hashed_with_provider_registration_transaction_hash: Some(Self::hash_confirmed_hash(confirmed_hash, provider_registration_transaction_hash)),
+            confirmed_hash_hashed_with_provider_registration_transaction_hash: Some(
+                Self::hash_confirmed_hash(confirmed_hash, provider_registration_transaction_hash),
+            ),
             socket_address,
             operator_public_key,
             previous_operator_public_keys: Default::default(),
@@ -96,7 +105,7 @@ impl MasternodeEntry {
             update_height: 0,
             key_id_voting,
             is_valid: is_valid != 0,
-            entry_hash
+            entry_hash,
         }
     }
 
@@ -111,10 +120,19 @@ impl MasternodeEntry {
         let offset: &mut usize = &mut 0;
         const HASH_IMPORTANT_DATA_LENGTH: usize = 32 + 32 + 16 + 2 + 48 + 20 + 1;
         let mut buffer: Vec<u8> = Vec::with_capacity(HASH_IMPORTANT_DATA_LENGTH);
-        *offset += provider_registration_transaction_hash.consensus_encode(&mut buffer).unwrap();
+        *offset += provider_registration_transaction_hash
+            .consensus_encode(&mut buffer)
+            .unwrap();
         *offset += confirmed_hash.consensus_encode(&mut buffer).unwrap();
-        *offset += socket_address.ip_address.consensus_encode(&mut buffer).unwrap();
-        *offset += socket_address.port.swap_bytes().consensus_encode(&mut buffer).unwrap();
+        *offset += socket_address
+            .ip_address
+            .consensus_encode(&mut buffer)
+            .unwrap();
+        *offset += socket_address
+            .port
+            .swap_bytes()
+            .consensus_encode(&mut buffer)
+            .unwrap();
         *offset += operator_public_key.consensus_encode(&mut buffer).unwrap();
         *offset += key_id_voting.consensus_encode(&mut buffer).unwrap();
         *offset += is_valid.consensus_encode(&mut buffer).unwrap();
@@ -123,8 +141,14 @@ impl MasternodeEntry {
 
     pub fn confirmed_hash_at(&self, block_height: u32) -> Option<UInt256> {
         match self.known_confirmed_at_height {
-            Some(h) => if h > block_height { None } else { Some(self.confirmed_hash) },
-            None => None
+            Some(h) => {
+                if h > block_height {
+                    None
+                } else {
+                    Some(self.confirmed_hash)
+                }
+            }
+            None => None,
         }
     }
 
@@ -136,15 +160,26 @@ impl MasternodeEntry {
     }
 
     pub fn update_confirmed_hash_hashed_with_provider_registration_transaction_hash(&mut self) {
-        let hash = Self::hash_confirmed_hash(self.confirmed_hash, self.provider_registration_transaction_hash);
+        let hash = Self::hash_confirmed_hash(
+            self.confirmed_hash,
+            self.provider_registration_transaction_hash,
+        );
         self.confirmed_hash_hashed_with_provider_registration_transaction_hash = Some(hash)
     }
 
-    pub fn confirmed_hash_hashed_with_provider_registration_transaction_hash_at(&self, block_height: u32) -> Option<UInt256> {
-        if self.known_confirmed_at_height.is_none() || self.known_confirmed_at_height? <= block_height {
+    pub fn confirmed_hash_hashed_with_provider_registration_transaction_hash_at(
+        &self,
+        block_height: u32,
+    ) -> Option<UInt256> {
+        if self.known_confirmed_at_height.is_none()
+            || self.known_confirmed_at_height? <= block_height
+        {
             self.confirmed_hash_hashed_with_provider_registration_transaction_hash
         } else {
-            Some(Self::hash_confirmed_hash(UInt256::default(), self.provider_registration_transaction_hash))
+            Some(Self::hash_confirmed_hash(
+                UInt256::default(),
+                self.provider_registration_transaction_hash,
+            ))
         }
     }
 
@@ -161,7 +196,7 @@ impl MasternodeEntry {
             self.socket_address,
             self.operator_public_key,
             self.key_id_voting,
-            if self.is_valid {1} else {0}
+            if self.is_valid { 1 } else { 0 },
         )
     }
 
@@ -198,7 +233,7 @@ impl MasternodeEntry {
         }
         let mut min_distance = u32::MAX;
         let mut used_previous_operator_public_key_at_block_hash = self.operator_public_key;
-        for (Block {height,..}, key) in self.previous_operator_public_keys.clone() {
+        for (Block { height, .. }, key) in self.previous_operator_public_keys.clone() {
             if height <= block_height {
                 continue;
             }
@@ -212,8 +247,7 @@ impl MasternodeEntry {
     }
 
     pub fn entry_hash_at(&self, block_height: u32) -> UInt256 {
-        if self.previous_entry_hashes.len() == 0 ||
-            block_height == u32::MAX {
+        if self.previous_entry_hashes.len() == 0 || block_height == u32::MAX {
             return self.entry_hash.clone();
         }
         let hashes: BTreeMap<Block, UInt256> = self.previous_entry_hashes.clone();
@@ -233,7 +267,6 @@ impl MasternodeEntry {
         used_hash
     }
 
-
     pub fn unique_id(&self) -> String {
         short_hex_string_from(&self.provider_registration_transaction_hash.0)
     }
@@ -246,7 +279,8 @@ impl MasternodeEntry {
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
         if (*entry).is_valid_at(self.update_height) != self.is_valid {
-            self.previous_validity.insert(block.clone(), (*entry).is_valid.clone());
+            self.previous_validity
+                .insert(block.clone(), (*entry).is_valid.clone());
         }
         self.previous_operator_public_keys = (*entry)
             .previous_operator_public_keys
@@ -255,7 +289,8 @@ impl MasternodeEntry {
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
         if (*entry).operator_public_key_at(self.update_height) != self.operator_public_key {
-            self.previous_operator_public_keys.insert(block.clone(), (*entry).operator_public_key.clone());
+            self.previous_operator_public_keys
+                .insert(block.clone(), (*entry).operator_public_key.clone());
         }
         let old_prev_mn_entry_hashes = (*entry)
             .previous_entry_hashes
@@ -265,7 +300,8 @@ impl MasternodeEntry {
             .collect();
         self.previous_entry_hashes = old_prev_mn_entry_hashes;
         if (*entry).entry_hash_at(self.update_height) != self.entry_hash {
-            self.previous_entry_hashes.insert(block.clone(), (*entry).entry_hash.clone());
+            self.previous_entry_hashes
+                .insert(block.clone(), (*entry).entry_hash.clone());
         }
     }
 

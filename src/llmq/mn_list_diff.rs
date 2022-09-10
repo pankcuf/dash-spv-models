@@ -1,13 +1,13 @@
-use std::collections::BTreeMap;
-use dash_spv_primitives::consensus::encode::VarInt;
-use dash_spv_primitives::crypto::byte_util::{BytesDecodable, Reversable};
-use dash_spv_primitives::crypto::UInt256;
-use dash_spv_primitives::crypto::var_array::VarArray;
-use dash_spv_primitives::crypto::var_bytes::VarBytes;
-use dash_spv_primitives::hashes::hex::ToHex;
 use crate::common::LLMQType;
 use crate::masternode::{LLMQEntry, MasternodeEntry};
 use crate::tx::CoinbaseTransaction;
+use dash_spv_primitives::consensus::encode::VarInt;
+use dash_spv_primitives::crypto::byte_util::{BytesDecodable, Reversable};
+use dash_spv_primitives::crypto::var_array::VarArray;
+use dash_spv_primitives::crypto::var_bytes::VarBytes;
+use dash_spv_primitives::crypto::UInt256;
+use dash_spv_primitives::hashes::hex::ToHex;
+use std::collections::BTreeMap;
 
 #[derive(Clone)]
 pub struct MNListDiff<'a> {
@@ -36,7 +36,10 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
             .field("merkle_flags_count", &self.merkle_flags_count)
             .field("coinbase_transaction", &self.coinbase_transaction)
             .field("deleted_masternode_hashes", &self.deleted_masternode_hashes)
-            .field("added_or_modified_masternodes", &self.added_or_modified_masternodes)
+            .field(
+                "added_or_modified_masternodes",
+                &self.added_or_modified_masternodes,
+            )
             .field("deleted_quorums", &self.deleted_quorums)
             .field("added_quorums", &self.added_quorums)
             .field("block_height", &self.block_height)
@@ -45,21 +48,27 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
 }
 
 impl<'a> MNListDiff<'a> {
-    pub fn new<F: Fn(UInt256) -> u32>(message: &'a [u8], offset: &mut usize, block_height_lookup: F) -> Option<Self> {
+    pub fn new<F: Fn(UInt256) -> u32>(
+        message: &'a [u8],
+        offset: &mut usize,
+        block_height_lookup: F,
+    ) -> Option<Self> {
         let base_block_hash = UInt256::from_bytes(message, offset)?;
         let block_hash = UInt256::from_bytes(message, offset)?;
-        let block_height= block_height_lookup(block_hash);
+        let block_height = block_height_lookup(block_hash);
         let total_transactions = u32::from_bytes(message, offset)?;
         let merkle_hashes = VarArray::<UInt256>::from_bytes(message, offset)?;
         let merkle_flags_var_bytes = VarBytes::from_bytes(message, offset)?;
         let coinbase_transaction = CoinbaseTransaction::from_bytes(message, offset)?;
         let deleted_masternode_count = VarInt::from_bytes(message, offset)?.0;
-        let mut deleted_masternode_hashes: Vec<UInt256> = Vec::with_capacity(deleted_masternode_count as usize);
+        let mut deleted_masternode_hashes: Vec<UInt256> =
+            Vec::with_capacity(deleted_masternode_count as usize);
         for _i in 0..deleted_masternode_count {
             deleted_masternode_hashes.push(UInt256::from_bytes(message, offset)?);
         }
         let added_masternode_count = VarInt::from_bytes(message, offset)?.0;
-        let added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry> = (0..added_masternode_count)
+        let added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry> = (0
+            ..added_masternode_count)
             .into_iter()
             .filter_map(|_i| {
                 // assert_eq!(message.len(), MN_ENTRY_PAYLOAD_LENGTH);
@@ -67,8 +76,11 @@ impl<'a> MNListDiff<'a> {
                 entry.update_with_block_height(block_height);
                 Some(entry)
             })
-            .fold(BTreeMap::new(),|mut acc, entry| {
-                let hash = entry.provider_registration_transaction_hash.clone().reversed();
+            .fold(BTreeMap::new(), |mut acc, entry| {
+                let hash = entry
+                    .provider_registration_transaction_hash
+                    .clone()
+                    .reversed();
                 acc.insert(hash, entry);
                 acc
             });
@@ -102,13 +114,13 @@ impl<'a> MNListDiff<'a> {
             total_transactions,
             merkle_hashes,
             merkle_flags: merkle_flags_var_bytes.1,
-            merkle_flags_count: merkle_flags_var_bytes.0.0 as usize,
+            merkle_flags_count: merkle_flags_var_bytes.0 .0 as usize,
             coinbase_transaction,
             deleted_masternode_hashes,
             added_or_modified_masternodes,
             deleted_quorums,
             added_quorums,
-            block_height
+            block_height,
         })
     }
 }

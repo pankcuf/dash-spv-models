@@ -1,5 +1,5 @@
-use dash_spv_primitives::crypto::UInt256;
 use crate::common::LLMQType;
+use dash_spv_primitives::crypto::UInt256;
 
 #[derive(Debug, Copy, Clone)]
 pub struct LLMQTypedHash {

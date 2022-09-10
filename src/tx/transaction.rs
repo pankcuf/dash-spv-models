@@ -1,10 +1,10 @@
 use byte::ctx::Endian;
-use byte::{BytesExt, LE, TryRead};
-use dash_spv_primitives::consensus::Encodable;
+use byte::{BytesExt, TryRead, LE};
 use dash_spv_primitives::consensus::encode::VarInt;
+use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::{UInt256, VarBytes};
-use dash_spv_primitives::hashes::{Hash, sha256d};
 use dash_spv_primitives::hashes::hex::ToHex;
+use dash_spv_primitives::hashes::{sha256d, Hash};
 
 // block height indicating transaction is unconfirmed
 pub const TX_UNCONFIRMED: i32 = i32::MAX;
@@ -43,7 +43,7 @@ impl From<u16> for TransactionType {
             0x000A => TransactionType::SubscriptionResetKey,
             0x000B => TransactionType::SubscriptionCloseAccount,
             0x000C => TransactionType::Transition,
-            _ => TransactionType::Classic
+            _ => TransactionType::Classic,
         }
     }
 }
@@ -58,7 +58,9 @@ impl TransactionType {
     fn raw_value(&self) -> u16 {
         *self as u16
     }
-    pub fn requires_inputs(&self) -> bool { true }
+    pub fn requires_inputs(&self) -> bool {
+        true
+    }
 }
 
 #[derive(Clone)]
@@ -75,8 +77,18 @@ impl std::fmt::Debug for TransactionInput {
         f.debug_struct("TransactionInput")
             .field("input_hash", &self.input_hash)
             .field("index", &self.index)
-            .field("script", &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
-            .field("signature", &self.signature.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .field(
+                "script",
+                &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex(),
+            )
+            .field(
+                "signature",
+                &self
+                    .signature
+                    .as_ref()
+                    .unwrap_or(&Vec::<u8>::new())
+                    .to_hex(),
+            )
             .field("sequence", &self.sequence)
             .finish()
     }
@@ -89,7 +101,7 @@ impl<'a> TryRead<'a, Endian> for TransactionInput {
         let index = bytes.read_with::<u32>(offset, LE)?;
         let signature = match bytes.read_with::<VarBytes>(offset, LE) {
             Ok(data) => Some(data.1.to_vec()),
-            Err(_err) => None
+            Err(_err) => None,
         };
         let sequence = bytes.read_with::<u32>(offset, LE)?;
         let input = TransactionInput {
@@ -97,7 +109,7 @@ impl<'a> TryRead<'a, Endian> for TransactionInput {
             index,
             script: None,
             signature,
-            sequence
+            sequence,
         };
         Ok((input, *offset))
     }
@@ -114,8 +126,14 @@ impl std::fmt::Debug for TransactionOutput {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TransactionOutput")
             .field("amount", &self.amount)
-            .field("script", &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
-            .field("address", &self.address.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex())
+            .field(
+                "script",
+                &self.script.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex(),
+            )
+            .field(
+                "address",
+                &self.address.as_ref().unwrap_or(&Vec::<u8>::new()).to_hex(),
+            )
             .finish()
     }
 }
@@ -126,13 +144,16 @@ impl<'a> TryRead<'a, Endian> for TransactionOutput {
         let amount = bytes.read_with::<u64>(offset, LE)?;
         let script = match bytes.read_with::<VarBytes>(offset, LE) {
             Ok(data) => Some(data.1.to_vec()),
-            Err(_err) => None
+            Err(_err) => None,
         };
-        let output = TransactionOutput { amount, script, address: None };
+        let output = TransactionOutput {
+            amount,
+            script,
+            address: None,
+        };
         Ok((output, *offset))
     }
 }
-
 
 pub trait ITransaction {
     fn payload_data(&self) -> Vec<u8>;
@@ -153,7 +174,6 @@ pub struct Transaction {
 }
 
 impl Transaction {
-
     pub fn to_data(&self) -> Vec<u8> {
         self.to_data_with_subscript_index(u64::MAX)
     }
@@ -164,7 +184,9 @@ impl Transaction {
             self.version,
             self.tx_type,
             &self.inputs,
-            &self.outputs, self.lock_time)
+            &self.outputs,
+            self.lock_time,
+        )
     }
 
     pub fn data_with_subscript_index_static(
@@ -181,29 +203,43 @@ impl Transaction {
         let outputs_len = outputs.len();
         *offset += version.consensus_encode(&mut buffer).unwrap();
         *offset += tx_type.raw_value().consensus_encode(&mut buffer).unwrap();
-        *offset += VarInt(inputs_len as u64).consensus_encode(&mut buffer).unwrap();
+        *offset += VarInt(inputs_len as u64)
+            .consensus_encode(&mut buffer)
+            .unwrap();
         (0..inputs_len).into_iter().for_each(|i| {
             let input = &inputs[i];
             *offset += input.input_hash.consensus_encode(&mut buffer).unwrap();
             *offset += input.index.consensus_encode(&mut buffer).unwrap();
             if subscript_index == u64::MAX && input.signature.is_some() {
-                *offset += input.signature.as_ref().unwrap().consensus_encode(&mut buffer).unwrap()
+                *offset += input
+                    .signature
+                    .as_ref()
+                    .unwrap()
+                    .consensus_encode(&mut buffer)
+                    .unwrap()
                 // *offset += consensus_encode_with_size(input.signature.unwrap(), &mut buffer).unwrap()
             } else if subscript_index == i as u64 && input.script.is_some() {
-                *offset += input.script.as_ref().unwrap().consensus_encode(&mut buffer).unwrap()
+                *offset += input
+                    .script
+                    .as_ref()
+                    .unwrap()
+                    .consensus_encode(&mut buffer)
+                    .unwrap()
                 // *offset += consensus_encode_with_size(input.script.unwrap(), &mut buffer).unwrap()
             } else {
                 *offset += VarInt(0 as u64).consensus_encode(&mut buffer).unwrap();
             }
             *offset += input.sequence.consensus_encode(&mut buffer).unwrap();
         });
-        *offset += VarInt(outputs_len as u64).consensus_encode(&mut buffer).unwrap();
+        *offset += VarInt(outputs_len as u64)
+            .consensus_encode(&mut buffer)
+            .unwrap();
         (0..outputs_len).into_iter().for_each(|i| {
             let output = &outputs[i];
             *offset += output.amount.consensus_encode(&mut buffer).unwrap();
             if let Some(script) = &output.script {
                 *offset += script.consensus_encode(&mut buffer).unwrap()
-                    //*offset += consensus_encode_with_size(script, &mut buffer).unwrap()
+                //*offset += consensus_encode_with_size(script, &mut buffer).unwrap()
             }
         });
         *offset += lock_time.consensus_encode(&mut buffer).unwrap();
@@ -244,7 +280,7 @@ impl<'a> TryRead<'a, Endian> for Transaction {
             tx_type,
             lock_time,
             payload_offset: *offset,
-            block_height: TX_UNCONFIRMED as u32
+            block_height: TX_UNCONFIRMED as u32,
         };
         tx.tx_hash = if tx_type == TransactionType::Classic {
             Some(UInt256(sha256d::Hash::hash(&tx.to_data()).into_inner()))

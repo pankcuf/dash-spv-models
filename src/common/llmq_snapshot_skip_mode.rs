@@ -1,5 +1,5 @@
 use byte::ctx::Endian;
-use byte::{BytesExt, LE, TryRead};
+use byte::{BytesExt, TryRead, LE};
 
 #[repr(u32)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq, PartialOrd, Hash)]
@@ -17,7 +17,7 @@ pub enum LLMQSnapshotSkipMode {
     // quorumsize ≥ 2/3*masternodeNb
     SkipExcept = 2,
     // Every node was skipped. The skip list is empty. DKG sessions were not attempted.
-    SkipAll = 3
+    SkipAll = 3,
 }
 impl From<u32> for LLMQSnapshotSkipMode {
     fn from(orig: u32) -> Self {
@@ -26,13 +26,16 @@ impl From<u32> for LLMQSnapshotSkipMode {
             1 => LLMQSnapshotSkipMode::SkipFirst,
             2 => LLMQSnapshotSkipMode::SkipExcept,
             3 => LLMQSnapshotSkipMode::SkipAll,
-            _ => LLMQSnapshotSkipMode::NoSkipping
+            _ => LLMQSnapshotSkipMode::NoSkipping,
         }
     }
 }
 
 impl<'a> TryRead<'a, Endian> for LLMQSnapshotSkipMode {
     fn try_read(bytes: &'a [u8], _endian: Endian) -> byte::Result<(Self, usize)> {
-        Ok((LLMQSnapshotSkipMode::from(bytes.read_with::<u32>(&mut 0, LE)?), 4))
+        Ok((
+            LLMQSnapshotSkipMode::from(bytes.read_with::<u32>(&mut 0, LE)?),
+            4,
+        ))
     }
 }
