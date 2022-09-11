@@ -13,7 +13,7 @@ pub struct LLMQSnapshot {
     // (masternodeListSize + 7)/8
     pub member_list: Vec<u8>,
     // Skiplist at height n
-    pub skip_list: Vec<u32>,
+    pub skip_list: Vec<i32>,
     //  Mode of the skip list
     pub skip_list_mode: LLMQSnapshotSkipMode,
 }
@@ -46,7 +46,7 @@ impl<'a> TryRead<'a, Endian> for LLMQSnapshot {
         let skip_list_length = bytes.read_with::<VarInt>(offset, LE)?.0 as usize;
         let mut skip_list = Vec::with_capacity(skip_list_length);
         for _i in 0..skip_list_length {
-            skip_list.push(bytes.read_with::<u32>(offset, LE)?);
+            skip_list.push(bytes.read_with::<i32>(offset, LE)?);
         }
         Ok((
             Self {
@@ -60,6 +60,15 @@ impl<'a> TryRead<'a, Endian> for LLMQSnapshot {
 }
 
 impl LLMQSnapshot {
+
+    pub fn new(member_list: Vec<u8>, skip_list: Vec<i32>, skip_list_mode: LLMQSnapshotSkipMode) -> Self {
+        LLMQSnapshot {
+            member_list,
+            skip_list,
+            skip_list_mode
+        }
+    }
+
     pub fn length(&self) -> usize {
         self.member_list.len() + 1 + 2 + self.skip_list.len() * 2
     }
@@ -88,7 +97,7 @@ impl LLMQSnapshot {
             }
             LLMQSnapshotSkipMode::SkipFirst => {
                 let mut first_entry_index = 0;
-                let mut processed_skip_list = Vec::<u32>::new();
+                let mut processed_skip_list = Vec::<i32>::new();
                 self.skip_list.iter().for_each(|s| {
                     let index = first_entry_index + s;
                     if first_entry_index == 0 {

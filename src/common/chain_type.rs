@@ -1,6 +1,7 @@
 use dash_spv_primitives::crypto::byte_util::Reversable;
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::hex::FromHex;
+use crate::common::LLMQType;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum ChainType {
@@ -28,5 +29,13 @@ impl ChainType {
         }
         .unwrap()
         .reversed()
+    }
+
+    pub fn isd_llmq_type(&self) -> LLMQType {
+        match self {
+            ChainType::MainNet => LLMQType::Llmqtype60_75,
+            ChainType::TestNet => LLMQType::Llmqtype60_75,
+            ChainType::DevNet => LLMQType::LlmqtypeDevnetDIP0024,
+        }
     }
 }

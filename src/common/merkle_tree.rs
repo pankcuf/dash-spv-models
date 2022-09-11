@@ -1,6 +1,9 @@
 use dash_spv_primitives::consensus::Encodable;
-use dash_spv_primitives::crypto::UInt256;
+use dash_spv_primitives::crypto::byte_util::BytesDecodable;
+use dash_spv_primitives::crypto::{UInt256, VarBytes};
+use dash_spv_primitives::crypto::var_array::VarArray;
 use dash_spv_primitives::hashes::{sha256d, Hash};
+use byte::BytesExt;
 
 #[inline]
 fn ceil_log2(mut x: i32) -> i32 {
@@ -23,6 +26,7 @@ pub struct MerkleTree<'a> {
 }
 
 impl<'a> MerkleTree<'a> {
+
     pub fn has_root(&self, desired_merkle_root: UInt256) -> bool {
         if self.tree_element_count == 0 {
             return true;
@@ -83,5 +87,29 @@ impl<'a> MerkleTree<'a> {
         let left = self.walk_hash_idx(hash_idx, flag_idx, depth + 1, leaf, branch);
         let right = self.walk_hash_idx(hash_idx, flag_idx, depth + 1, leaf, branch);
         branch(left.unwrap(), right)
+    }
+}
+
+impl<'a> BytesDecodable<'a, MerkleTree<'a>> for MerkleTree<'a> {
+    fn from_bytes(bytes: &'a [u8], offset: &mut usize) -> Option<Self> {
+        match bytes.read_with(offset, byte::LE) {
+            Ok(data) => Some(data),
+            Err(_err) => None
+        }
+    }
+}
+
+impl<'a> byte::TryRead<'a, byte::ctx::Endian> for MerkleTree<'a> {
+    fn try_read(bytes: &'a [u8], _endian: byte::ctx::Endian) -> byte::Result<(Self, usize)> {
+        let offset = &mut 0;
+        let total_transactions = u32::from_bytes(bytes, offset).unwrap();
+        let merkle_hashes = VarArray::<UInt256>::from_bytes(bytes, offset).unwrap();
+        let merkle_flags_var_bytes = VarBytes::from_bytes(bytes, offset).unwrap();
+        let tree = MerkleTree {
+            tree_element_count: total_transactions,
+            hashes: merkle_hashes.1,
+            flags: merkle_flags_var_bytes.1
+        };
+        Ok((tree, *offset))
     }
 }
