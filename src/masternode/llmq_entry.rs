@@ -7,6 +7,7 @@ use dash_spv_primitives::crypto::data_ops::Data;
 use dash_spv_primitives::crypto::{UInt256, UInt384, UInt768};
 use dash_spv_primitives::hashes::{sha256d, Hash};
 use std::convert::Into;
+use dash_spv_primitives::hashes::hex::ToHex;
 
 pub const LLMQ_DEFAULT_VERSION: u16 = 1;
 pub const LLMQ_INDEXED_VERSION: u16 = 2;
@@ -34,22 +35,22 @@ impl std::fmt::Debug for LLMQEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LLMQEntry")
             .field("version", &self.version)
-            // .field("llmq_hash", &self.llmq_hash)
+            .field("llmq_hash", &self.llmq_hash)
             .field("index", &self.index.unwrap_or(0))
-            // .field("public_key", &self.public_key)
-            // .field("threshold_signature", &self.threshold_signature)
-            // .field("verification_vector_hash", &self.verification_vector_hash)
-            // .field("all_commitment_aggregated_signature", &self.all_commitment_aggregated_signature)
+            .field("public_key", &self.public_key)
+            .field("threshold_signature", &self.threshold_signature)
+            .field("verification_vector_hash", &self.verification_vector_hash)
+            .field("all_commitment_aggregated_signature", &self.all_commitment_aggregated_signature)
             .field("llmq_type", &self.llmq_type)
-            // .field("signers_bitset", &self.signers_bitset.to_hex())
-            // .field("signers_bitset_length", &self.signers_bitset.len())
-            // .field("signers_count", &self.signers_count)
-            // .field("valid_members_bitset", &self.valid_members_bitset.to_hex())
-            // .field("valid_members_bitset_length", &self.valid_members_bitset.len())
-            // .field("valid_members_count", &self.valid_members_count)
+            .field("signers_bitset", &self.signers_bitset.to_hex())
+            .field("signers_bitset_length", &self.signers_bitset.len())
+            .field("signers_count", &self.signers_count)
+            .field("valid_members_bitset", &self.valid_members_bitset.to_hex())
+            .field("valid_members_bitset_length", &self.valid_members_bitset.len())
+            .field("valid_members_count", &self.valid_members_count)
             .field("entry_hash", &self.entry_hash)
             .field("verified", &self.verified)
-            // .field("commitment_hash", &self.commitment_hash)
+            .field("commitment_hash", &self.commitment_hash)
             .finish()
     }
 }

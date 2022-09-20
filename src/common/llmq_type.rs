@@ -77,10 +77,10 @@ pub const DKG_100_67: DKGParams = DKGParams {
     bad_votes_threshold: 80,
 };
 pub const DKG_60_75: DKGParams = DKGParams {
-    interval: 24 * 2,
-    phase_blocks: 4,
-    mining_window_start: 20,
-    mining_window_end: 28,
+    interval: 24 * 12,
+    phase_blocks: 2,
+    mining_window_start: 42,
+    mining_window_end: 50,
     bad_votes_threshold: 48,
 };
 
@@ -202,7 +202,7 @@ pub const LLMQ_60_75: LLMQParams = LLMQParams {
     min_size: 50,
     threshold: 45,
     dkg_params: DKG_60_75,
-    signing_active_quorum_count: 16,
+    signing_active_quorum_count: 32,
     keep_old_connections: 64,
     recovery_members: 25,
 };

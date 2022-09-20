@@ -4,19 +4,20 @@ use crate::tx::CoinbaseTransaction;
 use dash_spv_primitives::consensus::encode::VarInt;
 use dash_spv_primitives::crypto::byte_util::{BytesDecodable, Reversable};
 use dash_spv_primitives::crypto::var_array::VarArray;
-use dash_spv_primitives::crypto::var_bytes::VarBytes;
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::hex::ToHex;
 use std::collections::BTreeMap;
+use byte::BytesExt;
 
 #[derive(Clone)]
-pub struct MNListDiff<'a> {
+pub struct MNListDiff {
     pub base_block_hash: UInt256,
     pub block_hash: UInt256,
     pub total_transactions: u32,
     pub merkle_hashes: VarArray<UInt256>,
-    pub merkle_flags: &'a [u8],
-    pub merkle_flags_count: usize,
+    pub merkle_flags: Vec<u8>,
+    // pub merkle_flags: &'a [u8],
+    // pub merkle_flags_count: usize,
     pub coinbase_transaction: CoinbaseTransaction,
     pub deleted_masternode_hashes: Vec<UInt256>,
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
@@ -25,7 +26,7 @@ pub struct MNListDiff<'a> {
     pub block_height: u32,
 }
 
-impl<'a> std::fmt::Debug for MNListDiff<'a> {
+impl std::fmt::Debug for MNListDiff {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MNListDiff")
             .field("base_block_hash", &self.base_block_hash)
@@ -33,7 +34,7 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
             .field("total_transactions", &self.total_transactions)
             .field("merkle_hashes", &self.merkle_hashes)
             .field("merkle_flags", &self.merkle_flags.to_hex())
-            .field("merkle_flags_count", &self.merkle_flags_count)
+            .field("merkle_flags_count", &self.merkle_flags.len())
             .field("coinbase_transaction", &self.coinbase_transaction)
             .field("deleted_masternode_hashes", &self.deleted_masternode_hashes)
             .field(
@@ -47,9 +48,9 @@ impl<'a> std::fmt::Debug for MNListDiff<'a> {
     }
 }
 
-impl<'a> MNListDiff<'a> {
+impl MNListDiff {
     pub fn new<F: Fn(UInt256) -> u32>(
-        message: &'a [u8],
+        message: &[u8],
         offset: &mut usize,
         block_height_lookup: F,
     ) -> Option<Self> {
@@ -58,7 +59,11 @@ impl<'a> MNListDiff<'a> {
         let block_height = block_height_lookup(block_hash);
         let total_transactions = u32::from_bytes(message, offset)?;
         let merkle_hashes = VarArray::<UInt256>::from_bytes(message, offset)?;
-        let merkle_flags_var_bytes = VarBytes::from_bytes(message, offset)?;
+        let merkle_flags_count = VarInt::from_bytes(message, offset)?.0 as usize;
+        let merkle_flags: &[u8] = match message.read_with(offset, byte::ctx::Bytes::Len(merkle_flags_count)) {
+            Ok(data) => data,
+            Err(_err) => { return None; },
+        };
         let coinbase_transaction = CoinbaseTransaction::from_bytes(message, offset)?;
         let deleted_masternode_count = VarInt::from_bytes(message, offset)?.0;
         let mut deleted_masternode_hashes: Vec<UInt256> =
@@ -113,8 +118,7 @@ impl<'a> MNListDiff<'a> {
             block_hash,
             total_transactions,
             merkle_hashes,
-            merkle_flags: merkle_flags_var_bytes.1,
-            merkle_flags_count: merkle_flags_var_bytes.0 .0 as usize,
+            merkle_flags: merkle_flags.to_vec(),
             coinbase_transaction,
             deleted_masternode_hashes,
             added_or_modified_masternodes,
