@@ -306,7 +306,6 @@ impl MasternodeEntry {
     }
 
     pub fn update_with_block_height(&mut self, block_height: u32) {
-        //println!("update_with_block_height: {} {}", self.provider_registration_transaction_hash, block_height);
         self.update_height = block_height;
         if !self.confirmed_hash.is_zero() && block_height != u32::MAX {
             self.known_confirmed_at_height = Some(block_height);

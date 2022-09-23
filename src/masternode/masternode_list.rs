@@ -60,11 +60,6 @@ impl MasternodeList {
             llmq_merkle_root: None,
             masternodes,
         };
-        println!(
-            "MasternodeList: {}: {}",
-            block_height,
-            block_hash.clone().reversed()
-        );
         if let Some(hashes) = list.hashes_for_merkle_root(block_height) {
             list.masternode_merkle_root = merkle_root_from_hashes(hashes);
         }
@@ -161,7 +156,6 @@ impl MasternodeList {
                     acc
                 });
         llmq_commitment_hashes.sort();
-        //println!("MasternodeList.llmq_hashes: {:?}", llmq_commitment_hashes);
         llmq_commitment_hashes
     }
 
