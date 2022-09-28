@@ -5,7 +5,6 @@ use dash_spv_primitives::consensus::Encodable;
 use dash_spv_primitives::crypto::byte_util::{merkle_root_from_hashes, Reversable, Zeroable};
 use dash_spv_primitives::crypto::UInt256;
 use dash_spv_primitives::hashes::{sha256, Hash};
-use std::cmp::min;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
@@ -76,47 +75,6 @@ impl MasternodeList {
             count += entry.len() as u64;
         }
         count
-    }
-
-    pub fn valid_masternodes_for(
-        &self,
-        quorum_modifier: UInt256,
-        quorum_count: u32,
-        block_height: u32,
-    ) -> Vec<MasternodeEntry> {
-        let mut score_dictionary: BTreeMap<UInt256, MasternodeEntry> = self
-            .masternodes
-            .clone()
-            .into_iter()
-            .filter_map(|(_h, entry)| {
-                match Self::masternode_score(entry.clone(), quorum_modifier, block_height) {
-                    Some(score) => {
-                        if score.is_zero() {
-                            None
-                        } else {
-                            Some((score, entry))
-                        }
-                    }
-                    None => None,
-                }
-            })
-            .collect();
-        let mut scores: Vec<UInt256> = score_dictionary.clone().into_keys().collect();
-        scores.sort_by(|&s1, &s2| s2.clone().reversed().cmp(&s1.clone().reversed()));
-        let mut masternodes: Vec<MasternodeEntry> = Vec::new();
-        let masternodes_in_list_count = self.masternodes.len();
-        let count = min(masternodes_in_list_count, scores.len());
-        for i in 0..count {
-            if let Some(masternode) = score_dictionary.get_mut(&scores[i]) {
-                if (*masternode).is_valid_at(block_height) {
-                    masternodes.push((*masternode).clone());
-                }
-            }
-            if masternodes.len() == quorum_count as usize {
-                break;
-            }
-        }
-        masternodes
     }
 
     pub fn hashes_for_merkle_root(&self, block_height: u32) -> Option<Vec<UInt256>> {
@@ -198,11 +156,13 @@ impl MasternodeList {
     }
 
     pub fn masternode_score(
-        entry: MasternodeEntry,
+        entry: &MasternodeEntry,
         modifier: UInt256,
         block_height: u32,
     ) -> Option<UInt256> {
-        if entry.confirmed_hash_at(block_height).is_none() {
+        if !entry.is_valid ||
+            entry.confirmed_hash.is_zero() ||
+            entry.confirmed_hash_at(block_height).is_none() {
             return None;
         }
         let mut buffer: Vec<u8> = Vec::new();
@@ -212,7 +172,12 @@ impl MasternodeList {
             hash.consensus_encode(&mut buffer).unwrap();
         }
         modifier.consensus_encode(&mut buffer).unwrap();
-        Some(UInt256(sha256::Hash::hash(&buffer).into_inner()))
+        let score = UInt256(sha256::Hash::hash(&buffer).into_inner());
+        if score.is_zero() || score.0.is_empty() {
+            None
+        } else {
+            Some(score)
+        }
     }
 
     pub fn quorum_entry_for_platform_with_quorum_hash(
