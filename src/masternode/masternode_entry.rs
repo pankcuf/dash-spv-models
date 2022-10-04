@@ -8,7 +8,6 @@ use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
 use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::hashes::{sha256, sha256d, Hash};
 use std::collections::BTreeMap;
-use dash_spv_primitives::util::base58;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
