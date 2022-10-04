@@ -32,18 +32,18 @@ impl std::fmt::Debug for MasternodeEntry {
                 "provider_registration_transaction_hash",
                 &self.provider_registration_transaction_hash,
             )
-            // .field("confirmed_hash", &self.confirmed_hash)
+            .field("confirmed_hash", &self.confirmed_hash)
             // .field("confirmed_hash_hashed_with_provider_registration_transaction_hash", &self.confirmed_hash_hashed_with_provider_registration_transaction_hash)
-            // .field("socket_address", &self.socket_address)
-            // .field("operator_public_key", &self.operator_public_key)
+            .field("socket_address", &self.socket_address)
+            .field("operator_public_key", &self.operator_public_key)
             // .field("previous_operator_public_keys", &self.previous_operator_public_keys)
             // .field("previous_entry_hashes", &self.previous_entry_hashes)
             // .field("previous_validity", &self.previous_validity)
             // .field("known_confirmed_at_height", &self.known_confirmed_at_height)
             // .field("update_height", &self.update_height)
-            // .field("key_id_voting", &self.key_id_voting)
-            // .field("is_valid", &self.is_valid)
-            // .field("entry_hash", &self.entry_hash)
+            .field("key_id_voting", &self.key_id_voting)
+            .field("is_valid", &self.is_valid)
+            .field("entry_hash", &self.entry_hash)
             .finish()
     }
 }
