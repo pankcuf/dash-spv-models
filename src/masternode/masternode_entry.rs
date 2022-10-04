@@ -8,6 +8,7 @@ use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
 use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::hashes::{sha256, sha256d, Hash};
 use std::collections::BTreeMap;
+use dash_spv_primitives::util::base58;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
@@ -90,7 +91,8 @@ impl MasternodeEntry {
             key_id_voting,
             is_valid,
         );
-        println!("MasternodeEntry::new: entry_hash: {} ({}, {}, {:?}, {}, {}, {})", entry_hash, provider_registration_transaction_hash, confirmed_hash, socket_address, operator_public_key, key_id_voting, is_valid);
+
+        println!("MasternodeEntry::new: entry_hash: {} ({}, {}, {:?}, {}, {}, {})", entry_hash, provider_registration_transaction_hash, confirmed_hash, socket_address, operator_public_key, base58::check_encode_slice(&key_id_voting.0), is_valid);
         Self {
             provider_registration_transaction_hash,
             confirmed_hash,
