@@ -96,7 +96,12 @@ impl MasternodeList {
                     let entry_hash = mn.entry_hash_at(block_height);
                     entry_hash
                 })
-                .collect();
+                .collect::<Vec<UInt256>>();
+            println!("------ HASHES for {} ------", block_height);
+            for hash in entry_hashes.clone() {
+                println!("{}", hash);
+            }
+            println!("------ -------- ------");
             Some(entry_hashes)
         }
     }
