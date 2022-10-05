@@ -51,7 +51,7 @@ impl std::fmt::Debug for MasternodeEntry {
 impl<'a> TryRead<'a, Endian> for MasternodeEntry {
     fn try_read(bytes: &'a [u8], _ctx: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
-        println!("MasternodeEntry.try_read: {:?}", bytes.to_hex().chars().take(151).collect::<String>());
+        println!("MasternodeEntry.try_read: {:?}", bytes.to_hex().chars().take(302).collect::<String>());
         let provider_registration_transaction_hash =
             bytes.read_with::<UInt256>(offset, byte::LE)?;
         let confirmed_hash = bytes.read_with::<UInt256>(offset, byte::LE)?;
@@ -61,6 +61,7 @@ impl<'a> TryRead<'a, Endian> for MasternodeEntry {
         let operator_public_key = bytes.read_with::<UInt384>(offset, byte::LE)?;
         let key_id_voting = bytes.read_with::<UInt160>(offset, byte::LE)?;
         let is_valid = bytes.read_with::<u8>(offset, byte::LE).unwrap_or(0);
+        println!("MasternodeEntry::try_read {}, {}, {:?}, {}, {}, {}", provider_registration_transaction_hash, confirmed_hash, socket_address, operator_public_key, key_id_voting, is_valid);
         Ok((
             Self::new(
                 provider_registration_transaction_hash,
