@@ -8,6 +8,7 @@ use dash_spv_primitives::crypto::data_ops::short_hex_string_from;
 use dash_spv_primitives::crypto::{UInt128, UInt160, UInt256, UInt384};
 use dash_spv_primitives::hashes::{sha256, sha256d, Hash};
 use std::collections::BTreeMap;
+use dash_spv_primitives::hashes::hex::ToHex;
 
 #[derive(Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct MasternodeEntry {
@@ -50,6 +51,7 @@ impl std::fmt::Debug for MasternodeEntry {
 impl<'a> TryRead<'a, Endian> for MasternodeEntry {
     fn try_read(bytes: &'a [u8], _ctx: Endian) -> byte::Result<(Self, usize)> {
         let offset = &mut 0;
+        println!("MasternodeEntry.try_read: {:?}", bytes.to_hex().chars().take(151).collect::<String>());
         let provider_registration_transaction_hash =
             bytes.read_with::<UInt256>(offset, byte::LE)?;
         let confirmed_hash = bytes.read_with::<UInt256>(offset, byte::LE)?;
