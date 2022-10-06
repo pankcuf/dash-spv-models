@@ -85,7 +85,8 @@ impl MasternodeList {
             );
             None
         } else {
-            let pro_tx_hashes = self.sorted_reversed_pro_reg_tx_hashes();
+            let mut pro_tx_hashes = self.reversed_pro_reg_tx_hashes();
+            pro_tx_hashes.sort_by(|&s1, &s2| s1.clone().reversed().cmp(&s2.clone().reversed()));
             let mns = self.masternodes.clone();
             let entry_hashes = pro_tx_hashes
                 .clone()
