@@ -91,7 +91,7 @@ impl MasternodeEntry {
             is_valid,
         );
 
-        println!("MasternodeEntry::new: entry_hash: {} ({}, {}, {:?}, {}, {}, {})", entry_hash, provider_registration_transaction_hash, confirmed_hash, socket_address, operator_public_key, key_id_voting, is_valid);
+        //println!("MasternodeEntry::new: entry_hash: {} ({}, {}, {:?}, {}, {}, {})", entry_hash, provider_registration_transaction_hash, confirmed_hash, socket_address, operator_public_key, key_id_voting, is_valid);
         Self {
             provider_registration_transaction_hash,
             confirmed_hash,
