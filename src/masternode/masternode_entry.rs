@@ -274,36 +274,33 @@ impl MasternodeEntry {
     }
 
     pub fn update_with_previous_entry(&mut self, entry: &mut MasternodeEntry, block: Block) {
-        self.previous_validity = (*entry)
+        self.previous_validity = entry
             .previous_validity
             .clone()
             .into_iter()
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
-        if (*entry).is_valid_at(self.update_height) != self.is_valid {
-            self.previous_validity
-                .insert(block.clone(), (*entry).is_valid.clone());
+        if entry.is_valid_at(self.update_height) != self.is_valid {
+            self.previous_validity.insert(block.clone(), entry.is_valid);
         }
-        self.previous_operator_public_keys = (*entry)
+        self.previous_operator_public_keys = entry
             .previous_operator_public_keys
             .clone()
             .into_iter()
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
-        if (*entry).operator_public_key_at(self.update_height) != self.operator_public_key {
-            self.previous_operator_public_keys
-                .insert(block.clone(), (*entry).operator_public_key.clone());
+        if entry.operator_public_key_at(self.update_height) != self.operator_public_key {
+            self.previous_operator_public_keys.insert(block.clone(), entry.operator_public_key.clone());
         }
-        let old_prev_mn_entry_hashes = (*entry)
+        let old_prev_mn_entry_hashes = entry
             .previous_entry_hashes
             .clone()
             .into_iter()
-            .filter(|(block, _)| (*block).height < self.update_height)
+            .filter(|(block, _)| block.height < self.update_height)
             .collect();
         self.previous_entry_hashes = old_prev_mn_entry_hashes;
-        if (*entry).entry_hash_at(self.update_height) != self.entry_hash {
-            self.previous_entry_hashes
-                .insert(block.clone(), (*entry).entry_hash.clone());
+        if entry.entry_hash_at(self.update_height) != self.entry_hash {
+            self.previous_entry_hashes.insert(block.clone(), entry.entry_hash.clone());
         }
     }
 

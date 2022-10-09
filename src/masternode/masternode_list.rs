@@ -98,11 +98,11 @@ impl MasternodeList {
                     entry_hash
                 })
                 .collect::<Vec<UInt256>>();
-            println!("------ HASHES for {} ------", block_height);
-            for hash in entry_hashes.clone() {
-                println!("{}", hash);
-            }
-            println!("------ -------- ------");
+            // println!("------ HASHES for {} ------", block_height);
+            // for hash in entry_hashes.clone() {
+            //     println!("{}", hash);
+            // }
+            // println!("------ -------- ------");
             Some(entry_hashes)
         }
     }
