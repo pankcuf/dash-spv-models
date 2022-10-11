@@ -32,6 +32,7 @@ impl<'a> MerkleTree<'a> {
             return true;
         }
         if let Some(root) = self.merkle_root() {
+            println!("MerkleTree.hasRoot: {} == {}", root, desired_merkle_root);
             if root == desired_merkle_root {
                 return true;
             }
