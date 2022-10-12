@@ -277,7 +277,6 @@ impl LLMQEntry {
     }
 
     fn validate_bitset(bitset: Vec<u8>, count: VarInt) -> bool {
-        //println!("validate_bitset: {:?}:{}:{}:{}", bitset.to_hex(), bitset.len(), count, count.0 / 8);
         if bitset.len() != (count.0 as usize + 7) / 8 {
             println!(
                 "Error: The byte size of the bitvectors ({}) must match “(quorumSize + 7) / 8 ({})",

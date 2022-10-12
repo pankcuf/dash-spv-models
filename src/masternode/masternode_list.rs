@@ -79,10 +79,7 @@ impl MasternodeList {
 
     pub fn hashes_for_merkle_root(&self, block_height: u32) -> Option<Vec<UInt256>> {
         if block_height == u32::MAX {
-            println!(
-                "Block height lookup queried an unknown block {:?}",
-                self.block_hash
-            );
+            println!("hashes_for_merkle_root: unknown block {:?}", self.block_hash);
             None
         } else {
             let mut pro_tx_hashes = self.reversed_pro_reg_tx_hashes();
@@ -130,10 +127,6 @@ impl MasternodeList {
         // we need to check that the coinbase is in the transaction hashes we got back
         // and is in the merkle block
         if let Some(mn_merkle_root) = self.masternode_merkle_root {
-            println!(
-                "rootMNListValid: {:?} == {:?}",
-                mn_merkle_root, tx.merkle_root_mn_list
-            );
             tx.merkle_root_mn_list == mn_merkle_root
         } else {
             false
@@ -143,10 +136,6 @@ impl MasternodeList {
     pub fn has_valid_llmq_list_root(&self, tx: &CoinbaseTransaction) -> bool {
         let q_merkle_root = self.llmq_merkle_root;
         let ct_q_merkle_root = tx.merkle_root_llmq_list;
-        println!(
-            "LLMQ list root valid: {:?} == {:?}",
-            q_merkle_root, ct_q_merkle_root
-        );
         let has_valid_quorum_list_root = q_merkle_root.is_some()
             && ct_q_merkle_root.is_some()
             && ct_q_merkle_root.unwrap() == q_merkle_root.unwrap();

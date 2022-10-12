@@ -79,7 +79,6 @@ impl MNListDiff {
                 // assert_eq!(message.len(), MN_ENTRY_PAYLOAD_LENGTH);
                 let mut entry = MasternodeEntry::from_bytes(message, offset)?;
                 entry.update_with_block_height(block_height);
-                println!("{} => {:?}", block_height, entry);
                 Some(entry)
             })
             .fold(BTreeMap::new(), |mut acc, entry| {
