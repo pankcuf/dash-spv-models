@@ -23,6 +23,7 @@ pub struct MNListDiff {
     pub added_or_modified_masternodes: BTreeMap<UInt256, MasternodeEntry>,
     pub deleted_quorums: BTreeMap<LLMQType, Vec<UInt256>>,
     pub added_quorums: BTreeMap<LLMQType, BTreeMap<UInt256, LLMQEntry>>,
+    pub base_block_height: u32,
     pub block_height: u32,
 }
 
@@ -43,6 +44,7 @@ impl std::fmt::Debug for MNListDiff {
             )
             .field("deleted_quorums", &self.deleted_quorums)
             .field("added_quorums", &self.added_quorums)
+            .field("base_block_height", &self.base_block_height)
             .field("block_height", &self.block_height)
             .finish()
     }
@@ -56,7 +58,9 @@ impl MNListDiff {
     ) -> Option<Self> {
         let base_block_hash = UInt256::from_bytes(message, offset)?;
         let block_hash = UInt256::from_bytes(message, offset)?;
+        let base_block_height = block_height_lookup(base_block_hash);
         let block_height = block_height_lookup(block_hash);
+        println!("MNListDiff::new {}..{}", base_block_height, block_height);
         let total_transactions = u32::from_bytes(message, offset)?;
         let merkle_hashes = VarArray::<UInt256>::from_bytes(message, offset)?;
         let merkle_flags_count = VarInt::from_bytes(message, offset)?.0 as usize;
@@ -124,6 +128,7 @@ impl MNListDiff {
             added_or_modified_masternodes,
             deleted_quorums,
             added_quorums,
+            base_block_height,
             block_height,
         })
     }
