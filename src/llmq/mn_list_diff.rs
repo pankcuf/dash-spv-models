@@ -14,7 +14,7 @@ pub struct MNListDiff {
     pub base_block_hash: UInt256,
     pub block_hash: UInt256,
     pub total_transactions: u32,
-    pub merkle_hashes: VarArray<UInt256>,
+    pub merkle_hashes: Vec<UInt256>,
     pub merkle_flags: Vec<u8>,
     // pub merkle_flags: &'a [u8],
     // pub merkle_flags_count: usize,
@@ -60,7 +60,6 @@ impl MNListDiff {
         let block_hash = UInt256::from_bytes(message, offset)?;
         let base_block_height = block_height_lookup(base_block_hash);
         let block_height = block_height_lookup(block_hash);
-        println!("MNListDiff::new {}..{}", base_block_height, block_height);
         let total_transactions = u32::from_bytes(message, offset)?;
         let merkle_hashes = VarArray::<UInt256>::from_bytes(message, offset)?;
         let merkle_flags_count = VarInt::from_bytes(message, offset)?.0 as usize;
@@ -121,7 +120,7 @@ impl MNListDiff {
             base_block_hash,
             block_hash,
             total_transactions,
-            merkle_hashes,
+            merkle_hashes: merkle_hashes.1,
             merkle_flags: merkle_flags.to_vec(),
             coinbase_transaction,
             deleted_masternode_hashes,
