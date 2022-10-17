@@ -21,4 +21,4 @@ name = "dash_spv_models"
 [profile.release]
 lto = "thin"
 opt-level = 3
-debug = true
+#debug = true
