@@ -89,10 +89,10 @@ impl MasternodeList {
                 .clone()
                 .into_iter()
                 .map(|hash| {
-                    let h = hash.clone();
+                    let h = *hash;
                     let mn = &mns[&h];
-                    let entry_hash = mn.entry_hash_at(block_height);
-                    entry_hash
+                    
+                    mn.entry_hash_at(block_height)
                 })
                 .collect::<Vec<UInt256>>();
             Some(entry_hashes)

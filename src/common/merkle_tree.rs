@@ -36,7 +36,7 @@ impl<'a> MerkleTree<'a> {
                 return true;
             }
         }
-        return false;
+        false
     }
 
     pub fn merkle_root(&self) -> Option<UInt256> {
@@ -51,7 +51,7 @@ impl<'a> MerkleTree<'a> {
                 let mut buffer: Vec<u8> = Vec::with_capacity(64);
                 left.consensus_encode(&mut buffer).unwrap();
                 right
-                    .unwrap_or(left.clone())
+                    .unwrap_or(left)
                     .consensus_encode(&mut buffer)
                     .unwrap();
                 let hash = sha256d::Hash::hash(&buffer);

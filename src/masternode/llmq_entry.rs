@@ -82,9 +82,9 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
             llmq_type,
             llmq_hash,
             index,
-            signers_count.clone(),
+            signers_count,
             signers_bitset,
-            valid_members_count.clone(),
+            valid_members_count,
             valid_members_bitset,
             public_key,
             verification_vector_hash,
@@ -137,9 +137,9 @@ impl LLMQEntry {
             llmq_type,
             llmq_hash,
             index,
-            signers_count.clone(),
+            signers_count,
             signers_bitset.as_slice(),
-            valid_members_count.clone(),
+            valid_members_count,
             valid_members_bitset.as_slice(),
             public_key,
             verification_vector_hash,
@@ -191,10 +191,10 @@ impl LLMQEntry {
             *offset += index.consensus_encode(&mut buffer).unwrap();
         }
         *offset += signers_count.consensus_encode(&mut buffer).unwrap();
-        buffer.emit_slice(&signers_bitset).unwrap();
+        buffer.emit_slice(signers_bitset).unwrap();
         *offset += signers_bitset.len();
         *offset += valid_members_count.consensus_encode(&mut buffer).unwrap();
-        buffer.emit_slice(&valid_members_bitset).unwrap();
+        buffer.emit_slice(valid_members_bitset).unwrap();
         *offset += valid_members_bitset.len();
         *offset += public_key.consensus_encode(&mut buffer).unwrap();
         *offset += verification_vector_hash

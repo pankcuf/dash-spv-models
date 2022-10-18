@@ -209,7 +209,7 @@ impl MasternodeEntry {
     }
 
     pub fn is_valid_at(&self, block_height: u32) -> bool {
-        if self.previous_validity.len() == 0 || block_height == u32::MAX {
+        if self.previous_validity.is_empty() || block_height == u32::MAX {
             return self.is_valid;
         }
         let mut min_distance = u32::MAX;
@@ -247,12 +247,12 @@ impl MasternodeEntry {
     }
 
     pub fn entry_hash_at(&self, block_height: u32) -> UInt256 {
-        if self.previous_entry_hashes.len() == 0 || block_height == u32::MAX {
-            return self.entry_hash.clone();
+        if self.previous_entry_hashes.is_empty() || block_height == u32::MAX {
+            return self.entry_hash;
         }
         let hashes: BTreeMap<Block, UInt256> = self.previous_entry_hashes.clone();
         let mut min_distance = u32::MAX;
-        let mut used_hash = self.entry_hash.clone();
+        let mut used_hash = self.entry_hash;
         for (Block { height, .. }, hash) in hashes {
             if height <= block_height {
                 continue;
@@ -279,7 +279,7 @@ impl MasternodeEntry {
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
         if entry.is_valid_at(self.update_height) != self.is_valid {
-            self.previous_validity.insert(block.clone(), entry.is_valid);
+            self.previous_validity.insert(block, entry.is_valid);
         }
         self.previous_operator_public_keys = entry
             .previous_operator_public_keys
@@ -288,7 +288,7 @@ impl MasternodeEntry {
             .filter(|(block, _)| block.height < self.update_height)
             .collect();
         if entry.operator_public_key_at(self.update_height) != self.operator_public_key {
-            self.previous_operator_public_keys.insert(block.clone(), entry.operator_public_key.clone());
+            self.previous_operator_public_keys.insert(block, entry.operator_public_key);
         }
         let old_prev_mn_entry_hashes = entry
             .previous_entry_hashes
@@ -298,7 +298,7 @@ impl MasternodeEntry {
             .collect();
         self.previous_entry_hashes = old_prev_mn_entry_hashes;
         if entry.entry_hash_at(self.update_height) != self.entry_hash {
-            self.previous_entry_hashes.insert(block.clone(), entry.entry_hash.clone());
+            self.previous_entry_hashes.insert(block, entry.entry_hash);
         }
     }
 

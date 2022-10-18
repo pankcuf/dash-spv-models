@@ -50,7 +50,7 @@ impl From<u16> for TransactionType {
 
 impl Into<u16> for TransactionType {
     fn into(self) -> u16 {
-        *&self as u16
+        self as u16
     }
 }
 
@@ -227,7 +227,7 @@ impl Transaction {
                     .unwrap()
                 // *offset += consensus_encode_with_size(input.script.unwrap(), &mut buffer).unwrap()
             } else {
-                *offset += VarInt(0 as u64).consensus_encode(&mut buffer).unwrap();
+                *offset += VarInt(0_u64).consensus_encode(&mut buffer).unwrap();
             }
             *offset += input.sequence.consensus_encode(&mut buffer).unwrap();
         });
