@@ -12,7 +12,7 @@ byte = "0.2"
 [dependencies.dash-spv-primitives]
 git = "https://github.com/pankcuf/dash-spv-primitives"
 branch = "master"
-version = "0.2.3"
+version = "0.2.4"
 
 [lib]
 name = "dash_spv_models"
