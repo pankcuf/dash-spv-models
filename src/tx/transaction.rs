@@ -48,9 +48,9 @@ impl From<u16> for TransactionType {
     }
 }
 
-impl Into<u16> for TransactionType {
-    fn into(self) -> u16 {
-        self as u16
+impl From<TransactionType> for u16 {
+    fn from(value: TransactionType) -> Self {
+        value as u16
     }
 }
 
@@ -193,8 +193,8 @@ impl Transaction {
         subscript_index: u64,
         version: u16,
         tx_type: TransactionType,
-        inputs: &Vec<TransactionInput>,
-        outputs: &Vec<TransactionOutput>,
+        inputs: &[TransactionInput],
+        outputs: &[TransactionOutput],
         lock_time: u32,
     ) -> Vec<u8> {
         let mut buffer: Vec<u8> = Vec::new();

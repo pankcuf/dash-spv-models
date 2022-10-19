@@ -103,7 +103,7 @@ impl MNListDiff {
                 let llmq_hash = UInt256::from_bytes(message, offset)?;
                 deleted_quorums
                     .entry(llmq_type)
-                    .or_insert(Vec::new())
+                    .or_insert_with(Vec::new)
                     .push(llmq_hash);
             }
             let added_quorums_count = VarInt::from_bytes(message, offset)?.0;
@@ -111,7 +111,7 @@ impl MNListDiff {
                 if let Some(entry) = LLMQEntry::from_bytes(message, offset) {
                     added_quorums
                         .entry(entry.llmq_type)
-                        .or_insert(BTreeMap::new())
+                        .or_insert_with(BTreeMap::new)
                         .insert(entry.llmq_hash, entry);
                 }
             }

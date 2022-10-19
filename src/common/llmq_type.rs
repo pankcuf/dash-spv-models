@@ -275,9 +275,9 @@ impl From<u8> for LLMQType {
     }
 }
 
-impl Into<u8> for LLMQType {
-    fn into(self) -> u8 {
-        match self {
+impl From<LLMQType> for u8 {
+    fn from(value: LLMQType) -> Self {
+        match value {
             LLMQType::LlmqtypeUnknown => 0,
             LLMQType::Llmqtype50_60 => 1,
             LLMQType::Llmqtype400_60 => 2,

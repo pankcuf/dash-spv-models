@@ -84,7 +84,7 @@ impl CoinbaseTransaction {
         buffer
     }
 
-    pub fn has_found_coinbase(&mut self, hashes: &Vec<UInt256>) -> bool {
+    pub fn has_found_coinbase(&mut self, hashes: &[UInt256]) -> bool {
         if let Some(coinbase_hash) = self.base.tx_hash {
             self.has_found_coinbase_internal(coinbase_hash, hashes)
         } else {
@@ -94,7 +94,7 @@ impl CoinbaseTransaction {
         }
     }
 
-    fn has_found_coinbase_internal(&self, coinbase_hash: UInt256, hashes: &Vec<UInt256>) -> bool {
+    fn has_found_coinbase_internal(&self, coinbase_hash: UInt256, hashes: &[UInt256]) -> bool {
         hashes
             .iter()
             .filter(|&h| coinbase_hash.cmp(h).is_eq())

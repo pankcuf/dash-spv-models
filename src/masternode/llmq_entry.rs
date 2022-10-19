@@ -118,6 +118,7 @@ impl<'a> TryRead<'a, Endian> for LLMQEntry {
 }
 
 impl LLMQEntry {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         version: u16,
         llmq_type: LLMQType,
@@ -167,6 +168,7 @@ impl LLMQEntry {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn generate_data(
         version: u16,
         llmq_type: LLMQType,
