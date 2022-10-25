@@ -91,7 +91,7 @@ impl MasternodeList {
                 .map(|hash| {
                     let h = *hash;
                     let mn = &mns[&h];
-                    
+
                     mn.entry_hash_at(block_height)
                 })
                 .collect::<Vec<UInt256>>();
@@ -149,7 +149,7 @@ impl MasternodeList {
         modifier: UInt256,
         block_height: u32,
     ) -> Option<UInt256> {
-        if !entry.is_valid ||
+        if !entry.is_valid_at(block_height) ||
             entry.confirmed_hash.is_zero() ||
             entry.confirmed_hash_at(block_height).is_none() {
             return None;
